@@ -8,6 +8,7 @@ var Type;
     Type[Type["Vip"] = 2] = "Vip";
     Type[Type["Character"] = 3] = "Character";
     Type[Type["Avatar"] = 4] = "Avatar";
+    Type[Type["Environment"] = 5] = "Environment";
 })(Type = exports.Type || (exports.Type = {}));
 var PaymentType;
 (function (PaymentType) {

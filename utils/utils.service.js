@@ -10,7 +10,7 @@ function groupBy(array, callback) {
 exports.groupBy = groupBy;
 function convertMsToHM(milliseconds) {
     if (milliseconds < 0)
-        return "0:0";
+        return "0-0";
     var seconds = Math.floor(milliseconds / 1000);
     var minutes = Math.floor(seconds / 60);
     var hours = Math.floor(minutes / 60);

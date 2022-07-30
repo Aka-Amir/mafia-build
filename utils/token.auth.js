@@ -14,7 +14,7 @@ var AuthenticationService = (function () {
             };
         return jsonwebtoken_1.default.sign(payload, "".concat(this.SecretKey, "~").concat(id), {
             algorithm: "HS256",
-            expiresIn: 60,
+            expiresIn: "2000ms",
         });
     };
     AuthenticationService.Compare = function (token1, data, id) {

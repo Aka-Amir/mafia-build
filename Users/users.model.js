@@ -114,13 +114,13 @@ var UserModel = (function () {
                         _a.sent();
                         return [2, {
                                 Message: "Increased",
-                                Status: status_1.default.PROCCESS_SUCCESS
+                                Status: status_1.default.PROCCESS_SUCCESS,
                             }];
                     case 2:
                         e_1 = _a.sent();
                         return [2, {
                                 Message: "Faild: ".concat(JSON.stringify(e_1)),
-                                Status: status_1.default.PROCCESS_SUCCESS
+                                Status: status_1.default.PROCCESS_SUCCESS,
                             }];
                     case 3: return [2];
                 }
@@ -145,12 +145,10 @@ var UserModel = (function () {
                     case 1:
                         AllUsers = _c.sent();
                         AllUsers = AllUsers.map(function (user) { return user.toObject({ virtuals: true }); });
-                        NumberOfRegistrationsByDate = AllUsers
-                            .map(function (user) {
+                        NumberOfRegistrationsByDate = AllUsers.map(function (user) {
                             var date = new Date(user.SignupDate || 0);
                             return "".concat(date.getFullYear(), "/").concat(date.getMonth() + 1, "/").concat(date.getDate());
-                        })
-                            .reduce(function (total, current) {
+                        }).reduce(function (total, current) {
                             total[current] = Number(total[current] || 0) + 1;
                             return total;
                         }, {});
@@ -170,7 +168,7 @@ var UserModel = (function () {
                         console.trace(e_2);
                         return [2, {
                                 Message: "Faild",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 4: return [2];
                 }
@@ -189,7 +187,8 @@ var UserModel = (function () {
                         user = (_a.sent()).Payload;
                         AllUsers = void 0;
                         if (!user.Vip) return [3, 3];
-                        return [4, users_schema_1.default.find({}, {
+                        return [4, users_schema_1.default
+                                .find({}, {
                                 Xp: 1,
                             })
                                 .sort({ Xp: -1 })];
@@ -200,7 +199,9 @@ var UserModel = (function () {
                         });
                         count = 1;
                         pre = userIndex - count >= 0 ? userIndex - count : 0;
-                        next = userIndex + count <= AllUsers.length ? userIndex + count : AllUsers.length;
+                        next = userIndex + count <= AllUsers.length
+                            ? userIndex + count
+                            : AllUsers.length;
                         UsersSorted = [];
                         for (i = pre; i <= next; i++) {
                             if (AllUsers[i] !== undefined)
@@ -210,7 +211,8 @@ var UserModel = (function () {
                         }
                         AllUsers = UsersSorted;
                         return [3, 5];
-                    case 3: return [4, users_schema_1.default.find({}, {
+                    case 3: return [4, users_schema_1.default
+                            .find({}, {
                             Xp: 1,
                         })
                             .sort({ Xp: -1 })
@@ -221,14 +223,14 @@ var UserModel = (function () {
                     case 5: return [2, {
                             Message: "Fetched",
                             Status: status_1.default.PROCCESS_SUCCESS,
-                            Payload: AllUsers
+                            Payload: AllUsers,
                         }];
                     case 6:
                         e_3 = _a.sent();
                         console.trace(e_3);
                         return [2, {
                                 Message: "Faild",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 7: return [2];
                 }
@@ -285,6 +287,7 @@ var UserModel = (function () {
                                 VipExpireDay: 1,
                                 Xp: 1,
                                 Level: 1,
+                                InviteCount: 1,
                                 Score: 1,
                                 InvitationCode: 1,
                                 PrimaryCoin: 1,
@@ -494,14 +497,14 @@ var UserModel = (function () {
                         _a.sent();
                         return [2, {
                                 Message: "Success",
-                                Status: status_1.default.PROCCESS_SUCCESS
+                                Status: status_1.default.PROCCESS_SUCCESS,
                             }];
                     case 2:
                         e_10 = _a.sent();
                         console.trace(e_10);
                         return [2, {
                                 Message: "Faild",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 3: return [2];
                 }
@@ -541,24 +544,32 @@ var UserModel = (function () {
     };
     UserModel.GetUserFriends = function (userId) {
         return __awaiter(this, void 0, void 0, function () {
-            var response, e_12;
+            var response, data, e_12;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 2, , 3]);
                         return [4, users_schema_1.default
-                                .findOne({ _id: userId })
+                                .findOne({ _id: userId }, { Friends: 1 })
                                 .populate("Friends", {
                                 _id: 1,
                                 Nickname: 1,
                                 AvatarId: 1,
+                                Xp: 1,
+                                Score: 1,
                                 Level: 1,
-                            })
-                                .select({
-                                Friends: 1,
                             })];
                     case 1:
                         response = _a.sent();
+                        data = response.Friends.map(function (user) {
+                            return {
+                                _id: user._id,
+                                Nickname: user.Nickname,
+                                AvatarId: user.AvatarId,
+                                Level: user.Level,
+                                Score: user.Score,
+                            };
+                        });
                         if (!response)
                             return [2, {
                                     Message: "Not Found",
@@ -567,7 +578,7 @@ var UserModel = (function () {
                         return [2, {
                                 Message: "",
                                 Status: status_1.default.PROCCESS_SUCCESS,
-                                Payload: response.Friends,
+                                Payload: data,
                             }];
                     case 2:
                         e_12 = _a.sent();
@@ -592,16 +603,18 @@ var UserModel = (function () {
                                 .select({ From: 1 })
                                 .populate("From", {
                                 Nickname: 1,
+                                Xp: 1,
                                 AvatarId: 1,
                                 Level: 1,
                                 _id: 1,
-                            })];
+                            })
+                                .exec()];
                     case 1:
                         response = _a.sent();
                         return [2, {
                                 Message: "",
                                 Status: status_1.default.PROCCESS_SUCCESS,
-                                Payload: response,
+                                Payload: response.map(function (doc) { return doc.toObject(); }),
                             }];
                     case 2:
                         e_13 = _a.sent();
@@ -780,27 +793,29 @@ var UserModel = (function () {
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 4]);
-                        return [4, users_schema_1.default.find({
-                                $or: query
+                        return [4, users_schema_1.default
+                                .find({
+                                $or: query,
                             }, {
                                 UserName: 1,
                                 Character: 1,
                                 Vip: 1,
                                 VipExpireTime: 1,
-                            }).exec()];
+                            })
+                                .exec()];
                     case 2:
                         models = _a.sent();
                         return [2, {
                                 Message: "Success",
                                 Status: status_1.default.PROCCESS_SUCCESS,
-                                Payload: JSON.parse(JSON.stringify(models))
+                                Payload: JSON.parse(JSON.stringify(models)),
                             }];
                     case 3:
                         e_17 = _a.sent();
                         console.trace(e_17);
                         return [2, {
                                 Message: "Success",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 4: return [2];
                 }
@@ -816,16 +831,18 @@ var UserModel = (function () {
                         query = [];
                         for (_i = 0, ids_2 = ids; _i < ids_2.length; _i++) {
                             id = ids_2[_i];
-                            query.push({ _id: id, Vip: false });
+                            query.push({ _id: id });
                         }
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 4]);
-                        return [4, users_schema_1.default.updateMany({
-                                $or: query
+                        return [4, users_schema_1.default
+                                .updateMany({
+                                $or: query,
                             }, {
-                                $inc: { PrimaryCoin: (price * -1) }
-                            }).exec()];
+                                $inc: { PrimaryCoin: price * -1 },
+                            })
+                                .exec()];
                     case 2:
                         _a.sent();
                         return [2, {
@@ -837,7 +854,7 @@ var UserModel = (function () {
                         console.trace(e_18);
                         return [2, {
                                 Message: "Success",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 4: return [2];
                 }
@@ -856,7 +873,7 @@ var UserModel = (function () {
                                     BehaviorScore: 1000,
                                     ReportCount: 10,
                                     CommandCount: 20,
-                                }
+                                },
                             })];
                     case 1:
                         _a.sent();
@@ -869,7 +886,7 @@ var UserModel = (function () {
                         console.trace(e_19);
                         return [2, {
                                 Message: "Success",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 3: return [2];
                 }
@@ -889,13 +906,13 @@ var UserModel = (function () {
                         _b.sent();
                         return [2, {
                                 Message: "Succes",
-                                Status: status_1.default.PROCCESS_SUCCESS
+                                Status: status_1.default.PROCCESS_SUCCESS,
                             }];
                     case 2:
                         e_20 = _b.sent();
                         return [2, {
                                 Message: "Failed",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 3: return [2];
                 }
@@ -916,13 +933,15 @@ var UserModel = (function () {
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 4]);
-                        return [4, users_schema_1.default.updateMany({
-                                $or: query
+                        return [4, users_schema_1.default
+                                .updateMany({
+                                $or: query,
                             }, {
                                 $set: {
-                                    GameId: gameId
-                                }
-                            }).exec()];
+                                    GameId: gameId,
+                                },
+                            })
+                                .exec()];
                     case 2:
                         _a.sent();
                         return [2, {
@@ -934,7 +953,7 @@ var UserModel = (function () {
                         console.trace(e_21);
                         return [2, {
                                 Message: "Faild",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 4: return [2];
                 }
@@ -949,21 +968,25 @@ var UserModel = (function () {
                 switch (_b.label) {
                     case 0:
                         _b.trys.push([0, 3, , 4]);
-                        return [4, users_schema_1.default.updateOne({ _id: userId }, {
+                        return [4, users_schema_1.default
+                                .updateOne({ _id: userId }, {
                                 $inc: {
-                                    XP: xp
+                                    Xp: xp,
                                 },
                                 $push: {
-                                    GameHistory: win ? "W" : "L"
-                                }
-                            }).exec()];
+                                    GameHistory: win ? "W" : "L",
+                                },
+                            })
+                                .exec()];
                     case 1:
                         _b.sent();
-                        return [4, users_schema_1.default.updateMany({ _id: userId, GameId: gameId }, {
+                        return [4, users_schema_1.default
+                                .updateMany({ _id: userId, GameId: gameId }, {
                                 $set: {
                                     GameId: "",
-                                }
-                            }).exec()];
+                                },
+                            })
+                                .exec()];
                     case 2:
                         _b.sent();
                         return [2, {
@@ -975,7 +998,7 @@ var UserModel = (function () {
                         console.trace(e_22);
                         return [2, {
                                 Message: "Faild",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 4: return [2];
                 }
@@ -989,21 +1012,23 @@ var UserModel = (function () {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 2, , 3]);
-                        return [4, users_schema_1.default.updateOne({ _id: id }, {
-                                $set: query
-                            }).exec()];
+                        return [4, users_schema_1.default
+                                .updateOne({ _id: id }, {
+                                $set: query,
+                            })
+                                .exec()];
                     case 1:
                         _a.sent();
                         return [2, {
                                 Message: "updated",
-                                Status: status_1.default.PROCCESS_SUCCESS
+                                Status: status_1.default.PROCCESS_SUCCESS,
                             }];
                     case 2:
                         e_23 = _a.sent();
                         console.trace(e_23);
                         return [2, {
                                 Message: "Failed",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 3: return [2];
                 }
@@ -1017,23 +1042,25 @@ var UserModel = (function () {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 2, , 3]);
-                        return [4, users_schema_1.default.updateOne({ _id: id }, {
+                        return [4, users_schema_1.default
+                                .updateOne({ _id: id }, {
                                 $set: {
-                                    VipExpireTime: expireTime
-                                }
-                            }).exec()];
+                                    VipExpireTime: expireTime,
+                                },
+                            })
+                                .exec()];
                     case 1:
                         _a.sent();
                         return [2, {
                                 Message: "updated",
-                                Status: status_1.default.PROCCESS_SUCCESS
+                                Status: status_1.default.PROCCESS_SUCCESS,
                             }];
                     case 2:
                         e_24 = _a.sent();
                         console.trace(e_24);
                         return [2, {
                                 Message: "Failed",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 3: return [2];
                 }
@@ -1048,23 +1075,24 @@ var UserModel = (function () {
                 switch (_g.label) {
                     case 0:
                         _g.trys.push([0, 2, , 3]);
-                        banTime = ((minute * 60 * 1000) +
-                            (hour * 60 * 60 * 1000) +
-                            (day * 24 * 60 * 60 * 1000) +
-                            (month * 30 * 24 * 60 * 60 * 1000) +
-                            (year * 365 * 24 * 60 * 60 * 1000)) + Date.now();
+                        banTime = minute * 60 * 1000 +
+                            hour * 60 * 60 * 1000 +
+                            day * 24 * 60 * 60 * 1000 +
+                            month * 30 * 24 * 60 * 60 * 1000 +
+                            year * 365 * 24 * 60 * 60 * 1000 +
+                            Date.now();
                         return [4, users_schema_1.default.updateOne({ _id: userId }, { $set: { BanTime: banTime } })];
                     case 1:
                         _g.sent();
                         return [2, {
                                 Message: "Success",
-                                Status: status_1.default.PROCCESS_SUCCESS
+                                Status: status_1.default.PROCCESS_SUCCESS,
                             }];
                     case 2:
                         e_25 = _g.sent();
                         return [2, {
                                 Message: "Failed",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 3: return [2];
                 }
@@ -1121,11 +1149,13 @@ var UserModel = (function () {
                     case 2:
                         UserInventory = _a.sent();
                         UserInventory = UserInventory.Payload;
-                        UserInventoryIds_1 = UserInventory.map(function (item) { return item.ProductId.toString(); });
+                        UserInventoryIds_1 = UserInventory.map(function (item) {
+                            return item.ProductId.toString();
+                        });
                         UserGifts = Gifts.filter(function (item) {
                             var notInInventory = !UserInventoryIds_1.includes(item._id.toString());
                             var CoinType = item.Type === shop_interface_1.Type.Coin;
-                            return (notInInventory || CoinType);
+                            return notInInventory || CoinType;
                         });
                         if (GiftType === shop_interface_1.Type.Booster) {
                             Booster = UserInventory.filter(function (item) {
@@ -1166,7 +1196,9 @@ var UserModel = (function () {
                                 RaritiesWithChance.push(shop_interface_1.Rarity.SuperRare);
                             }
                         }
-                        SelectedRare_1 = InsteadOf ? shop_interface_1.Rarity.Common : RaritiesWithChance.sort(function () { return 0.5 - Math.random(); })[~~(RaritiesWithChance.length * Math.random())];
+                        SelectedRare_1 = InsteadOf
+                            ? shop_interface_1.Rarity.Common
+                            : RaritiesWithChance.sort(function () { return 0.5 - Math.random(); })[~~(RaritiesWithChance.length * Math.random())];
                         SelectedGifts = UserGifts.filter(function (avatar) { return avatar.Rarity === SelectedRare_1; });
                         SelectedGift = SelectedGifts[~~(SelectedGifts.length * Math.random())];
                         return [4, inventory_model_1.default.AddToInventory(UserId, SelectedGift._id.toString())];
@@ -1175,14 +1207,14 @@ var UserModel = (function () {
                         return [2, {
                                 Message: "Updated",
                                 Status: status_1.default.PROCCESS_SUCCESS,
-                                Payload: SelectedGift._id
+                                Payload: SelectedGift._id,
                             }];
                     case 4:
                         e_27 = _a.sent();
                         console.log(e_27);
                         return [2, {
                                 Message: "Failed",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 5: return [2];
                 }
@@ -1199,7 +1231,9 @@ var UserModel = (function () {
                         return [4, users_schema_1.default.updateOne({ _id: UserId }, { $push: { AdvertisHistory: Date.now() } })];
                     case 1:
                         _a.sent();
-                        return [4, users_schema_1.default.findOne({ _id: UserId }, { AdvertisHistory: 1, Advertise: 1 }).exec()];
+                        return [4, users_schema_1.default
+                                .findOne({ _id: UserId }, { AdvertisHistory: 1, Advertise: 1 })
+                                .exec()];
                     case 2:
                         AdvertisHistory = _a.sent();
                         GiftType = null;
@@ -1214,8 +1248,8 @@ var UserModel = (function () {
                                     Message: "Faild",
                                     Status: status_1.default.PROCCESS_SUCCESS,
                                     Payload: {
-                                        Gift: ""
-                                    }
+                                        Gift: "",
+                                    },
                                 }];
                         }
                         return [4, this.GiftToUser(UserId, GiftType)];
@@ -1224,14 +1258,14 @@ var UserModel = (function () {
                         return [2, {
                                 Message: "Updated",
                                 Status: status_1.default.PROCCESS_SUCCESS,
-                                Payload: { Gift: Gift }
+                                Payload: { Gift: Gift },
                             }];
                     case 4:
                         e_28 = _a.sent();
                         console.log(e_28);
                         return [2, {
                                 Message: "Failed",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 5: return [2];
                 }
@@ -1245,28 +1279,32 @@ var UserModel = (function () {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 2, , 3]);
-                        return [4, users_schema_1.default.findOne({ _id: UserId }, {
+                        return [4, users_schema_1.default
+                                .findOne({ _id: UserId }, {
                                 AdvertisHistory: 1,
                                 AdvertiseStatus: 1,
-                            }).exec()];
+                            })
+                                .exec()];
                     case 1:
                         data = _a.sent();
                         MillisecondInFourHours = 1000 * 60 * 60 * 4;
-                        lastSeen = (new Date(data.AdvertisHistory[data.AdvertisHistory.length - 1])).getTime();
+                        lastSeen = new Date(data.AdvertisHistory[data.AdvertisHistory.length - 1]).getTime();
                         return [2, {
                                 Message: "Updated",
                                 Status: status_1.default.PROCCESS_SUCCESS,
                                 Payload: {
-                                    RemainingTime: data.AdvertiseStatus ? (0, utils_service_1.convertMsToHM)(0) : (0, utils_service_1.convertMsToHM)(MillisecondInFourHours - (Date.now() - lastSeen)),
+                                    RemainingTime: data.AdvertiseStatus
+                                        ? (0, utils_service_1.convertMsToHM)(0)
+                                        : (0, utils_service_1.convertMsToHM)(MillisecondInFourHours - (Date.now() - lastSeen)),
                                     AdvertiseStatus: data.AdvertiseStatus,
-                                }
+                                },
                             }];
                     case 2:
                         e_29 = _a.sent();
                         console.log(e_29);
                         return [2, {
                                 Message: "Failed",
-                                Status: status_1.default.PROCCESS_FAILED
+                                Status: status_1.default.PROCCESS_FAILED,
                             }];
                     case 3: return [2];
                 }

@@ -58,7 +58,7 @@ var GameStates = {
     LastChanceCard: "LastChanceCard",
 };
 var Times = {
-    PassTurn: 8,
+    PassTurn: 5,
     Challenge: 5,
     Vote: 5,
     IntroductionNight: 10,
@@ -72,6 +72,7 @@ var Times = {
     NoneMayor: 0,
     SituationVote: 10,
     SituationConclude: 4,
+    SituationEndTime: 5,
 };
 var PartyState = {
     Night: 1,
@@ -90,7 +91,7 @@ var PartyBasicModel = {
     Kills: Array(),
     ShotRightQueue: Array(),
     DisconnectedUsers: Array(),
-    MemberLimit: 12,
+    MemberLimit: 10,
     GameTitle: "در حال انتظار",
     Starter: String(),
     EnvironmentID: String(),

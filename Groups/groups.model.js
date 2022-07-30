@@ -131,7 +131,7 @@ var GroupModel = (function () {
                         return [2, {
                                 Message: 'Ok',
                                 Status: status_1.default.PROCCESS_SUCCESS,
-                                Payload: data
+                                Payload: data ? data : []
                             }];
                     case 2:
                         err_3 = _a.sent();

@@ -174,6 +174,33 @@ var AdminController = (function () {
             });
         });
     };
+    AdminController.prototype.InitBazaar = function (req, res) {
+        return __awaiter(this, void 0, void 0, function () {
+            var ModelResponse, e_6;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        return [4, shop_model_1.default.Create(req.body)];
+                    case 1:
+                        ModelResponse = _a.sent();
+                        if (ModelResponse.Status === status_1.default.PROCCESS_SUCCESS) {
+                            res.status(200).send(ModelResponse);
+                        }
+                        else {
+                            res.status(400).send();
+                        }
+                        return [3, 3];
+                    case 2:
+                        e_6 = _a.sent();
+                        console.trace(e_6);
+                        res.status(501).send();
+                        return [3, 3];
+                    case 3: return [2];
+                }
+            });
+        });
+    };
     AdminController.prototype.CheckToken = function (req, res) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
@@ -190,7 +217,7 @@ var AdminController = (function () {
     };
     AdminController.prototype.SetScenarioLimit = function (req, res) {
         return __awaiter(this, void 0, void 0, function () {
-            var e_6;
+            var e_7;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -201,8 +228,8 @@ var AdminController = (function () {
                         res.status(200).send({ valid: true });
                         return [3, 3];
                     case 2:
-                        e_6 = _a.sent();
-                        console.trace(e_6);
+                        e_7 = _a.sent();
+                        console.trace(e_7);
                         res.status(501).send();
                         return [3, 3];
                     case 3: return [2];
@@ -212,7 +239,7 @@ var AdminController = (function () {
     };
     AdminController.prototype.Test = function (req, res) {
         return __awaiter(this, void 0, void 0, function () {
-            var data, e_7;
+            var data, e_8;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -223,8 +250,8 @@ var AdminController = (function () {
                         res.send({ data: data });
                         return [3, 3];
                     case 2:
-                        e_7 = _a.sent();
-                        console.trace(e_7);
+                        e_8 = _a.sent();
+                        console.trace(e_8);
                         res.status(501).send();
                         return [3, 3];
                     case 3: return [2];
@@ -247,6 +274,9 @@ var AdminController = (function () {
     __decorate([
         (0, router_1.Post)("/shop/create", [admin_middleware_1.AdminMiddleware, (0, admin_middleware_1.AdminAccess)(admin_constants_1.AdminSections.Shop, admin_constants_1.AdminRouteSections.Create)])
     ], AdminController.prototype, "Create", null);
+    __decorate([
+        (0, router_1.Post)("/shop/init_bazaar", [admin_middleware_1.AdminMiddleware, (0, admin_middleware_1.AdminAccess)(admin_constants_1.AdminSections.Shop, admin_constants_1.AdminRouteSections.Modify)])
+    ], AdminController.prototype, "InitBazaar", null);
     __decorate([
         (0, router_1.Get)("/token/check", [admin_middleware_1.AdminMiddleware])
     ], AdminController.prototype, "CheckToken", null);

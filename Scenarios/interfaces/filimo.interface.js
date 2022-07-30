@@ -29,10 +29,15 @@ var RolesName = {
     1006: "Psychiatrist",
     1007: "Citizen",
 };
-var MafiaRoles = [Roles.GodFather, Roles.DoctorLecture, Roles.Joker, Roles.Mafia];
+var MafiaRoles = [
+    Roles.GodFather,
+    Roles.DoctorLecture,
+    Roles.Joker,
+    Roles.Mafia,
+];
 var EnvStates = {
     Night: 0,
-    Day: 1
+    Day: 1,
 };
 var Opinions = {
     Like: 1,
@@ -46,28 +51,28 @@ var GameMode = {
     Voice: 1,
     Video: 2,
     Text: 3,
-    VR: 4
+    VR: 4,
 };
 var Sides = {
     Hidden: 0,
     Mafia: 1,
-    Citizen: 2
+    Citizen: 2,
 };
 var GameStatus = {
     CitizenWin: Sides.Citizen,
     MafiaWin: Sides.Mafia,
-    Continue: Sides.Hidden
+    Continue: Sides.Hidden,
 };
 var MayorAction = {
     NotUsed: 0,
     Execute: 1,
-    CancelSecondVote: 2
+    CancelSecondVote: 2,
 };
 var LastChanceEnum = {
-    "GreenPath": 0,
-    "Insomnia": 1,
-    "RedCarpet": 2,
-    "FinalShot": 3,
+    GreenPath: 0,
+    Insomnia: 1,
+    RedCarpet: 2,
+    FinalShot: 3,
 };
 var LastChance = {
     GreenPath: "GreenPath",
@@ -91,7 +96,7 @@ var Times = {
 };
 var PartyState = {
     Night: 1,
-    Day: 2
+    Day: 2,
 };
 var PartyBasicModel = {
     _id: String(),
@@ -164,14 +169,14 @@ var PlayerModel = {
     UserName: String(),
     Character: Number(),
     UserRole: Number(),
-    UserSide: Number()
+    UserSide: Number(),
 };
 var SendMessageToRoleInterface = {
     GameId: String(),
     Event: String(),
     UserRole: Number(),
     Message: Object(),
-    asObject: Boolean()
+    asObject: Boolean(),
 };
 var GameStates = {
     PassTurn: "PassTurn",
@@ -196,7 +201,7 @@ var EnvironmentSetting = {
     DisconnectedUsers: Array(),
     GameTitle: String(),
     StandingUser: String(),
-    GameMode: Number(GameMode.Voice)
+    GameMode: Number(GameMode.Voice),
 };
 exports.PartyBasicModel = PartyBasicModel;
 exports.LastChanceEnum = LastChanceEnum;

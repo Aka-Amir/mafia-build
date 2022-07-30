@@ -50,6 +50,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -73,7 +82,7 @@ var GroupData = (function () {
     GroupData.CreateGroup = function (groupId) {
         this.GroupMembersCount[groupId] = {
             membersCount: 1,
-            scenario: groups_enums_1.scenario.Classic
+            scenario: groups_enums_1.scenario.Classic,
         };
     };
     GroupData.ChangeScenario = function (groupId, scenario) {
@@ -92,10 +101,193 @@ var GroupData = (function () {
         return this.GroupMembersCount[groupId].scenario;
     };
     GroupData.RemoveGroup = function (groupId) {
-        delete this.GroupMembersCount[groupId];
+        try {
+            delete this.GroupMembersCount[groupId];
+        }
+        catch (e) {
+            return;
+        }
     };
     GroupData.GroupMembersCount = {};
     return GroupData;
+}());
+var GroupService = (function () {
+    function GroupService() {
+    }
+    GroupService.removeGroup = function (groupId) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        GroupData.RemoveGroup(groupId);
+                        return [4, model_redis_1.GroupRedis.DeleteGroup(groupId)];
+                    case 1:
+                        _a.sent();
+                        return [4, groups_model_1.default.DeleteGroup(groupId)];
+                    case 2:
+                        _a.sent();
+                        return [2];
+                }
+            });
+        });
+    };
+    GroupService.SetGameDataToUsersModel = function (Members, gameId) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, users_model_1.default.SetGameIdToUsers(Members, gameId)];
+                    case 1:
+                        _a.sent();
+                        return [2];
+                }
+            });
+        });
+    };
+    GroupService.startGroupWithoutMatchMaking = function (_a) {
+        var groupId = _a.groupId, Members = _a.Members, Environment = _a.Environment, Mode = _a.Mode, Scenario = _a.Scenario, socket = _a.socket;
+        return __awaiter(this, void 0, void 0, function () {
+            var gameId, startGameData;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        console.log("START GROUP");
+                        return [4, (0, game_model_1.CreateParty)()];
+                    case 1:
+                        gameId = _b.sent();
+                        return [4, GroupService.removeGroup(groupId)];
+                    case 2:
+                        _b.sent();
+                        return [4, GroupService.SetGameDataToUsersModel(Members, gameId)];
+                    case 3:
+                        _b.sent();
+                        startGameData = {
+                            _id: gameId,
+                            Members: Members,
+                            EnvironmentId: Environment,
+                            GameMode: Mode,
+                            Scenario: Scenario,
+                        };
+                        if (!(Scenario === groups_enums_1.scenario.Classic)) return [3, 5];
+                        return [4, classic_data_layer_1.default.InitParty(startGameData, socket)];
+                    case 4:
+                        _b.sent();
+                        return [3, 7];
+                    case 5: return [4, filimo_data_layer_1.default.InitParty(startGameData, socket)];
+                    case 6:
+                        _b.sent();
+                        _b.label = 7;
+                    case 7:
+                        GroupsWs._emitToRoom("Group@".concat(groupId), groups_events_ws_1.default.StartGroup, {
+                            gameId: gameId,
+                        });
+                        return [2];
+                }
+            });
+        });
+    };
+    GroupService.getAllGroups = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var AllGroups;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, groups_model_1.default.GetAll(true)];
+                    case 1:
+                        AllGroups = (_a.sent()).Payload;
+                        return [2, AllGroups.map(function (group) {
+                                return {
+                                    Members: JSON.parse(JSON.stringify(group.Members)),
+                                    _id: group._id.toString(),
+                                    Date: group.Date,
+                                    Mode: group.Mode,
+                                    Scenario: group.Scenario,
+                                    State: 0,
+                                    Gender: 0,
+                                };
+                            })];
+                }
+            });
+        });
+    };
+    GroupService.startGroupWithMatchMaking = function (_a) {
+        var Members = _a.Members, date = _a.date, Mode = _a.Mode, Scenario = _a.Scenario, groupId = _a.groupId, Environment = _a.Environment, socket = _a.socket;
+        return __awaiter(this, void 0, void 0, function () {
+            var scenarioMembersLimit, AllGroups, MatchMakingResult, gameId, startGameData, _i, _b, groupId_1, _c, _d, MatchedGroupId;
+            return __generator(this, function (_e) {
+                switch (_e.label) {
+                    case 0:
+                        console.log("MATCH MAKING");
+                        scenarioMembersLimit = Scenario === groups_enums_1.scenario.Classic
+                            ? groups_enums_1.membersLimit.Classic
+                            : groups_enums_1.membersLimit.Filimo;
+                        return [4, GroupService.getAllGroups()];
+                    case 1:
+                        AllGroups = _e.sent();
+                        return [4, (0, matchmaking_service_1.default)(AllGroups, {
+                                Members: JSON.parse(JSON.stringify(Members)),
+                                _id: groupId,
+                                Date: date,
+                                Mode: Mode,
+                                Scenario: Scenario,
+                                State: 0,
+                                Gender: 0,
+                            }, scenarioMembersLimit)];
+                    case 2:
+                        MatchMakingResult = _e.sent();
+                        if (MatchMakingResult === null) {
+                            GroupsWs._emitToRoom("Group@".concat(groupId), groups_events_ws_1.default.MatchMaking, {
+                                status: true,
+                            });
+                            return [2];
+                        }
+                        return [4, (0, game_model_1.CreateParty)()];
+                    case 3:
+                        gameId = _e.sent();
+                        return [4, GroupService.SetGameDataToUsersModel(MatchMakingResult.TempGroup.Members, gameId)];
+                    case 4:
+                        _e.sent();
+                        startGameData = {
+                            _id: gameId,
+                            Members: MatchMakingResult.TempGroup.Members,
+                            EnvironmentId: Environment,
+                            GameMode: Mode,
+                            Scenario: Scenario,
+                        };
+                        if (!(Scenario === groups_enums_1.scenario.Classic)) return [3, 6];
+                        return [4, classic_data_layer_1.default.InitParty(startGameData, socket)];
+                    case 5:
+                        _e.sent();
+                        return [3, 8];
+                    case 6: return [4, filimo_data_layer_1.default.InitParty(startGameData, socket)];
+                    case 7:
+                        _e.sent();
+                        _e.label = 8;
+                    case 8:
+                        for (_i = 0, _b = MatchMakingResult.MatchedGroupsId; _i < _b.length; _i++) {
+                            groupId_1 = _b[_i];
+                            GroupsWs._emitToRoom("Group@".concat(groupId_1), groups_events_ws_1.default.StartGroup, {
+                                gameId: gameId,
+                            });
+                        }
+                        _c = 0, _d = __spreadArray(__spreadArray([], MatchMakingResult.MatchedGroupsId, true), [
+                            groupId,
+                        ], false);
+                        _e.label = 9;
+                    case 9:
+                        if (!(_c < _d.length)) return [3, 12];
+                        MatchedGroupId = _d[_c];
+                        return [4, GroupService.removeGroup(MatchedGroupId)];
+                    case 10:
+                        _e.sent();
+                        _e.label = 11;
+                    case 11:
+                        _c++;
+                        return [3, 9];
+                    case 12: return [2];
+                }
+            });
+        });
+    };
+    return GroupService;
 }());
 var GroupsWs = (function (_super) {
     __extends(GroupsWs, _super);
@@ -142,14 +334,15 @@ var GroupsWs = (function (_super) {
                         return [4, groups_model_1.default.Create(socket.handshake.query.userId)];
                     case 1:
                         ModelResponse = _a.sent();
-                        if (!(ModelResponse.Status === status_1.default.PROCCESS_SUCCESS && ModelResponse.Payload)) return [3, 4];
+                        if (!(ModelResponse.Status === status_1.default.PROCCESS_SUCCESS &&
+                            ModelResponse.Payload)) return [3, 4];
                         socket.join("Group@".concat(ModelResponse.Payload._id));
                         return [4, model_redis_1.GroupRedis.SetEnvironment(socket.handshake.query.userId, ModelResponse.Payload._id, data.environments)];
                     case 2:
                         _a.sent();
                         GroupData.CreateGroup(ModelResponse.Payload._id);
                         socket.emit(groups_events_ws_1.default.Create, {
-                            groupId: ModelResponse.Payload._id
+                            groupId: ModelResponse.Payload._id,
                         });
                         return [4, GroupsWs._canStart(ModelResponse.Payload._id)];
                     case 3:
@@ -174,14 +367,14 @@ var GroupsWs = (function (_super) {
                     scenarioName: scenarioName,
                     scenarioCode: groupScenario,
                     membersLength: groupMembersCount,
-                    membersLimit: groups_enums_1.membersLimit[scenarioName]
+                    membersLimit: groups_enums_1.membersLimit[scenarioName],
                 });
                 if (groupMembersCount >= groups_enums_1.membersLimit[scenarioName]) {
                     return [2];
                 }
                 GroupsWs._emitToRoom(data.invitedUserId, groups_events_ws_1.default.Invite, {
                     groupId: data.groupId,
-                    userName: data.userName
+                    userName: data.userName,
                 });
                 return [2];
             });
@@ -202,8 +395,10 @@ var GroupsWs = (function (_super) {
                         return [4, users_model_1.default.GetUserById(socket.handshake.query.userId)];
                     case 2:
                         userData = (_a.sent()).Payload;
-                        if (userData.PrimaryCoin < parseInt(scenarioPrice)) {
-                            socket.emit("GroupsWs@ChangeScenario", { Status: status_1.default.NOT_ENOUGH_COIN });
+                        if (userData.PrimaryCoin < scenarioPrice) {
+                            socket.emit("GroupsWs@ChangeScenario", {
+                                Status: status_1.default.NOT_ENOUGH_COIN,
+                            });
                             return [2];
                         }
                         groupMembersCount = GroupData.GetMembersCount(data.groupId);
@@ -212,7 +407,7 @@ var GroupsWs = (function (_super) {
                             scenarioName: scenarioName,
                             scenarioCode: groupScenario,
                             membersLength: groupMembersCount,
-                            membersLimit: groups_enums_1.membersLimit[scenarioName]
+                            membersLimit: groups_enums_1.membersLimit[scenarioName],
                         });
                         if (groupMembersCount >= groups_enums_1.membersLimit[scenarioName]) {
                             return [2];
@@ -222,8 +417,9 @@ var GroupsWs = (function (_super) {
                     case 3:
                         ModelResponse = _a.sent();
                         socket.emit(groups_events_ws_1.default.Join, { Status: ModelResponse.Status });
-                        if (ModelResponse.Status === status_1.default.PROCCESS_SUCCESS && ModelResponse.Payload) {
-                            socket.join("Group@".concat(data.groupId), function (err) { return __awaiter(_this, void 0, void 0, function () {
+                        if (ModelResponse.Status === status_1.default.PROCCESS_SUCCESS &&
+                            ModelResponse.Payload) {
+                            socket.join("Group@".concat(data.groupId), function () { return __awaiter(_this, void 0, void 0, function () {
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
                                         case 0: return [4, model_redis_1.GroupRedis.SetEnvironment(socket.handshake.query.userId, data.groupId, data.environments)];
@@ -259,7 +455,8 @@ var GroupsWs = (function (_super) {
                         if (!(((_a = ModelResponse === null || ModelResponse === void 0 ? void 0 : ModelResponse.Payload) === null || _a === void 0 ? void 0 : _a.Creator) === socket.handshake.query.userId)) return [3, 4];
                         return [4, groups_model_1.default.ChangeMode(data.groupId, data.mode)];
                     case 2:
-                        if (!((_b.sent()).Status === status_1.default.PROCCESS_SUCCESS)) return [3, 4];
+                        if (!((_b.sent()).Status ===
+                            status_1.default.PROCCESS_SUCCESS)) return [3, 4];
                         return [4, GroupsWs.Info({ groupId: data.groupId, sendToAll: true }, undefined)];
                     case 3:
                         _b.sent();
@@ -281,7 +478,8 @@ var GroupsWs = (function (_super) {
                         if (!(((_a = ModelResponse === null || ModelResponse === void 0 ? void 0 : ModelResponse.Payload) === null || _a === void 0 ? void 0 : _a.Creator) === socket.handshake.query.userId)) return [3, 4];
                         return [4, groups_model_1.default.ChangeEnvironment(data.groupId, data.environment)];
                     case 2:
-                        if (!((_b.sent()).Status === status_1.default.PROCCESS_SUCCESS)) return [3, 4];
+                        if (!((_b.sent())
+                            .Status === status_1.default.PROCCESS_SUCCESS)) return [3, 4];
                         return [4, GroupsWs._canStart(data.groupId)];
                     case 3:
                         _b.sent();
@@ -303,8 +501,10 @@ var GroupsWs = (function (_super) {
                         return [4, users_model_1.default.GetUserById(socket.handshake.query.userId)];
                     case 2:
                         userData = (_b.sent()).Payload;
-                        if (userData.PrimaryCoin < parseInt(scenarioPrice)) {
-                            socket.emit("GroupsWs@ChangeScenario", { Status: status_1.default.NOT_ENOUGH_COIN });
+                        if (userData.PrimaryCoin < scenarioPrice) {
+                            socket.emit("GroupsWs@ChangeScenario", {
+                                Status: status_1.default.NOT_ENOUGH_COIN,
+                            });
                             return [2];
                         }
                         return [4, groups_model_1.default.Get(data.groupId)];
@@ -313,7 +513,8 @@ var GroupsWs = (function (_super) {
                         if (!(((_a = ModelResponse === null || ModelResponse === void 0 ? void 0 : ModelResponse.Payload) === null || _a === void 0 ? void 0 : _a.Creator) === socket.handshake.query.userId)) return [3, 6];
                         return [4, groups_model_1.default.ChangeScenario(data.groupId, data.scenario)];
                     case 4:
-                        if (!((_b.sent()).Status === status_1.default.PROCCESS_SUCCESS)) return [3, 6];
+                        if (!((_b.sent())
+                            .Status === status_1.default.PROCCESS_SUCCESS)) return [3, 6];
                         GroupData.ChangeScenario(data.groupId, data.scenario);
                         return [4, GroupsWs.Info({ groupId: data.groupId, sendToAll: true }, undefined)];
                     case 5:
@@ -340,19 +541,20 @@ var GroupsWs = (function (_super) {
         });
     };
     GroupsWs.Leave = function (data, socket) {
-        var _a;
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function () {
             var canLeave, ModelResponse, IsCreatorLeft, IsRemoved, e_2;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
-                        _b.trys.push([0, 10, , 11]);
+                        _c.trys.push([0, 10, , 11]);
                         canLeave = data.userId == socket.handshake.query.userId;
                         return [4, groups_model_1.default.Get(data.groupId)];
                     case 1:
-                        ModelResponse = _b.sent();
+                        ModelResponse = _c.sent();
                         if (ModelResponse.Payload && !canLeave) {
-                            canLeave = ModelResponse.Payload.Creator === socket.handshake.query.userId;
+                            canLeave =
+                                ModelResponse.Payload.Creator === socket.handshake.query.userId;
                         }
                         if (!(canLeave && ModelResponse.Payload)) return [3, 8];
                         IsCreatorLeft = ((_a = ModelResponse.Payload) === null || _a === void 0 ? void 0 : _a.Creator.toString()) === data.userId;
@@ -360,29 +562,29 @@ var GroupsWs = (function (_super) {
                         GroupData.RemoveGroup(data.groupId);
                         return [4, groups_model_1.default.DeleteGroup(data.groupId).catch(console.trace)];
                     case 2:
-                        _b.sent();
+                        _c.sent();
                         socket.emit(groups_events_ws_1.default.Leave, { Status: status_1.default.PROCCESS_SUCCESS });
                         return [3, 7];
-                    case 3: return [4, groups_model_1.default.RemoveMember(data.userId, data.groupId, IsCreatorLeft, ModelResponse.Payload.Members[1]._id)];
+                    case 3: return [4, groups_model_1.default.RemoveMember(data.userId, data.groupId, IsCreatorLeft, (_b = ModelResponse.Payload.Members[1]) === null || _b === void 0 ? void 0 : _b._id)];
                     case 4:
-                        IsRemoved = _b.sent();
+                        IsRemoved = _c.sent();
                         socket.emit(groups_events_ws_1.default.Leave, { Status: IsRemoved.Status });
                         if (!(IsRemoved.Status === status_1.default.PROCCESS_SUCCESS)) return [3, 7];
                         GroupData.RemoveMember(data.groupId);
                         return [4, model_redis_1.GroupRedis.RemoveMember(data.groupId, data.userId)];
                     case 5:
-                        _b.sent();
+                        _c.sent();
                         return [4, GroupsWs.Info({ groupId: data.groupId, sendToAll: true }, undefined)];
                     case 6:
-                        _b.sent();
-                        _b.label = 7;
+                        _c.sent();
+                        _c.label = 7;
                     case 7: return [3, 9];
                     case 8:
                         socket.emit(groups_events_ws_1.default.Leave, { Status: status_1.default.FORBIDDEN });
-                        _b.label = 9;
+                        _c.label = 9;
                     case 9: return [3, 11];
                     case 10:
-                        e_2 = _b.sent();
+                        e_2 = _c.sent();
                         console.trace(e_2);
                         return [3, 11];
                     case 11: return [2];
@@ -398,7 +600,8 @@ var GroupsWs = (function (_super) {
                     case 0: return [4, groups_model_1.default.Get(data.groupId)];
                     case 1:
                         ModelResponse = _a.sent();
-                        if (ModelResponse.Payload && ModelResponse.Status === status_1.default.PROCCESS_SUCCESS) {
+                        if (ModelResponse.Payload &&
+                            ModelResponse.Status === status_1.default.PROCCESS_SUCCESS) {
                             response = {
                                 creator: ModelResponse.Payload.Creator.toString(),
                                 environment: ModelResponse.Payload.Environment.toString(),
@@ -429,7 +632,9 @@ var GroupsWs = (function (_super) {
                     case 1:
                         ModelResponse = _a.sent();
                         if (ModelResponse.Status === status_1.default.PROCCESS_SUCCESS) {
-                            GroupsWs._emitToRoom("Group@".concat(data.groupId), groups_events_ws_1.default.MatchMaking, { status: false });
+                            GroupsWs._emitToRoom("Group@".concat(data.groupId), groups_events_ws_1.default.MatchMaking, {
+                                status: false,
+                            });
                         }
                         return [2];
                 }
@@ -443,7 +648,9 @@ var GroupsWs = (function (_super) {
             return __generator(this, function (_b) {
                 UserRooms = Object.keys(socket.rooms);
                 userId = socket.handshake.query.userId;
-                groupId = (_a = UserRooms.find(function (room) { return room.startsWith("Group@"); })) === null || _a === void 0 ? void 0 : _a.replace("Group@", "");
+                groupId = (_a = UserRooms.find(function (room) {
+                    return room.startsWith("Group@");
+                })) === null || _a === void 0 ? void 0 : _a.replace("Group@", "");
                 console.log("_disconnecting");
                 if (!userId || !groupId)
                     return [2];
@@ -455,206 +662,63 @@ var GroupsWs = (function (_super) {
     };
     GroupsWs.StartGroup = function (data, socket) {
         return __awaiter(this, void 0, void 0, function () {
-            var response, ModelResponse, Members, gameId, AllGroups, MatchMakingResult, gameId, _i, _a, groupId, Members, gameId, AllGroups, MatchMakingResult, gameId, _b, _c, groupId, e_3;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
+            var response, ModelResponse, Members, scenarioMembersLimit, e_3;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
-                        _d.trys.push([0, 33, , 34]);
+                        _a.trys.push([0, 3, , 4]);
                         return [4, groups_model_1.default.ChangeMatchMakingState(data.groupId, "start")];
                     case 1:
-                        response = _d.sent();
+                        response = _a.sent();
                         return [4, groups_model_1.default.Get(data.groupId)];
                     case 2:
-                        ModelResponse = _d.sent();
+                        ModelResponse = _a.sent();
                         console.log("StartGroup: ", {
                             ModelStatus: ModelResponse.Status,
                             Payload: !!ModelResponse.Payload,
                             ResponseStatus: response.Status,
-                            ModelResponse: JSON.stringify(ModelResponse)
+                            ModelResponse: JSON.stringify(ModelResponse),
                         });
-                        if (!(ModelResponse.Status === status_1.default.PROCCESS_SUCCESS &&
-                            response.Status === status_1.default.PROCCESS_SUCCESS &&
-                            ModelResponse.Payload)) return [3, 32];
-                        if (!(ModelResponse.Payload.Scenario === groups_enums_1.scenario.Filimo)) return [3, 17];
-                        Members = ModelResponse.Payload.Members.map(function (user) { return user._id.toString(); });
-                        if (!(ModelResponse.Payload.Members.length === groups_enums_1.membersLimit.Filimo)) return [3, 8];
-                        return [4, (0, game_model_1.CreateParty)()];
-                    case 3:
-                        gameId = _d.sent();
-                        GroupData.RemoveGroup(data.groupId);
-                        return [4, model_redis_1.GroupRedis.DeleteGroup(data.groupId)];
-                    case 4:
-                        _d.sent();
-                        return [4, users_model_1.default.SetGameIdToUsers(ModelResponse.Payload.Members.map(function (item) { return item._id; }), gameId)];
-                    case 5:
-                        _d.sent();
-                        return [4, filimo_data_layer_1.default.InitParty({
-                                _id: gameId,
-                                Members: Members,
-                                EnvironmentId: ModelResponse.Payload.Environment,
-                                GameMode: ModelResponse.Payload.Mode,
-                                Scenario: ModelResponse.Payload.Scenario
-                            }, socket)];
-                    case 6:
-                        _d.sent();
-                        GroupsWs._emitToRoom("Group@".concat(data.groupId), groups_events_ws_1.default.StartGroup, { gameId: gameId });
-                        return [4, groups_model_1.default.DeleteGroup(data.groupId)];
-                    case 7:
-                        _d.sent();
-                        return [3, 17];
-                    case 8: return [4, groups_model_1.default.GetAll(true)];
-                    case 9:
-                        AllGroups = (_d.sent()).Payload;
-                        AllGroups = AllGroups.map(function (group) {
-                            return {
-                                Members: JSON.parse(JSON.stringify(group.Members)),
-                                _id: group._id.toString(),
-                                Date: group.Date,
-                                Mode: group.Mode,
-                                Scenario: group.Scenario,
-                                State: 0,
-                                Gender: 0,
-                            };
-                        });
-                        console.log("Groups Len ".concat(AllGroups.length));
-                        console.log("Members Len ".concat(Members.length));
-                        return [4, (0, matchmaking_service_1.default)(AllGroups, {
-                                Members: JSON.parse(JSON.stringify(Members)),
-                                _id: ModelResponse.Payload._id.toString(),
-                                Date: ModelResponse.Payload.Date,
-                                Mode: ModelResponse.Payload.Mode,
-                                Scenario: ModelResponse.Payload.Scenario,
-                                State: 0,
-                                Gender: 0,
-                            }, groups_enums_1.membersLimit.Filimo, undefined, 0, 0, undefined)];
-                    case 10:
-                        MatchMakingResult = _d.sent();
-                        if (!(MatchMakingResult !== null)) return [3, 16];
-                        return [4, (0, game_model_1.CreateParty)()];
-                    case 11:
-                        gameId = _d.sent();
-                        GroupData.RemoveGroup(data.groupId);
-                        return [4, model_redis_1.GroupRedis.DeleteGroup(data.groupId)];
-                    case 12:
-                        _d.sent();
-                        return [4, users_model_1.default.SetGameIdToUsers(ModelResponse.Payload.Members.map(function (item) { return item._id; }), gameId)];
-                    case 13:
-                        _d.sent();
-                        return [4, filimo_data_layer_1.default.InitParty({
-                                _id: gameId,
-                                Members: Members,
-                                EnvironmentId: ModelResponse.Payload.Environment,
-                                GameMode: ModelResponse.Payload.Mode,
-                                Scenario: ModelResponse.Payload.Scenario
-                            }, socket)];
-                    case 14:
-                        _d.sent();
-                        for (_i = 0, _a = MatchMakingResult.MatchedGroupsId; _i < _a.length; _i++) {
-                            groupId = _a[_i];
-                            GroupsWs._emitToRoom("Group@".concat(groupId), groups_events_ws_1.default.StartGroup, { gameId: gameId });
+                        if (ModelResponse.Status !== status_1.default.PROCCESS_SUCCESS ||
+                            response.Status !== status_1.default.PROCCESS_SUCCESS ||
+                            !ModelResponse.Payload) {
+                            throw new Error(JSON.stringify(ModelResponse));
                         }
-                        return [4, groups_model_1.default.DeleteGroups(MatchMakingResult.MatchedGroupsId)];
-                    case 15:
-                        _d.sent();
-                        return [3, 17];
-                    case 16:
-                        GroupsWs._emitToRoom("Group@".concat(data.groupId), groups_events_ws_1.default.MatchMaking, { status: true });
-                        _d.label = 17;
-                    case 17:
-                        if (!(ModelResponse.Payload.Scenario === groups_enums_1.scenario.Classic)) return [3, 32];
-                        console.log("Classic SCENARIO");
-                        Members = ModelResponse.Payload.Members.map(function (user) { return user._id.toString(); });
+                        console.log("Start Classic SCENARIO");
+                        Members = ModelResponse.Payload.Members.map(function (user) {
+                            return user._id.toString();
+                        });
                         console.log("MEMBERS COUNT: ".concat(ModelResponse.Payload.Members.length));
-                        if (!(ModelResponse.Payload.Members.length === groups_enums_1.membersLimit.Classic)) return [3, 23];
-                        console.log("START GROUP");
-                        return [4, (0, game_model_1.CreateParty)()];
-                    case 18:
-                        gameId = _d.sent();
-                        GroupData.RemoveGroup(data.groupId);
-                        return [4, model_redis_1.GroupRedis.DeleteGroup(data.groupId)];
-                    case 19:
-                        _d.sent();
-                        return [4, users_model_1.default.SetGameIdToUsers(ModelResponse.Payload.Members.map(function (item) { return item._id; }), gameId)];
-                    case 20:
-                        _d.sent();
-                        return [4, classic_data_layer_1.default.InitParty({
-                                _id: gameId,
-                                Members: Members,
-                                EnvironmentId: ModelResponse.Payload.Environment,
-                                GameMode: ModelResponse.Payload.Mode,
-                                Scenario: ModelResponse.Payload.Scenario
-                            }, socket)];
-                    case 21:
-                        _d.sent();
-                        GroupsWs._emitToRoom("Group@".concat(data.groupId), groups_events_ws_1.default.StartGroup, { gameId: gameId });
-                        return [4, groups_model_1.default.DeleteGroup(data.groupId)];
-                    case 22:
-                        _d.sent();
-                        return [3, 32];
-                    case 23:
-                        console.log("MATCH MAKING");
-                        return [4, groups_model_1.default.GetAll(true)];
-                    case 24:
-                        AllGroups = (_d.sent()).Payload;
-                        AllGroups = AllGroups.map(function (group) {
-                            return {
-                                Members: JSON.parse(JSON.stringify(group.Members)),
-                                _id: group._id.toString(),
-                                Date: group.Date,
-                                Mode: group.Mode,
-                                Scenario: group.Scenario,
-                                State: 0,
-                                Gender: 0,
-                            };
-                        });
-                        return [4, (0, matchmaking_service_1.default)(AllGroups, {
-                                Members: JSON.parse(JSON.stringify(Members)),
-                                _id: ModelResponse.Payload._id.toString(),
-                                Date: ModelResponse.Payload.Date,
+                        scenarioMembersLimit = ModelResponse.Payload.Scenario === groups_enums_1.scenario.Classic
+                            ? groups_enums_1.membersLimit.Classic
+                            : groups_enums_1.membersLimit.Filimo;
+                        if (ModelResponse.Payload.Members.length === scenarioMembersLimit) {
+                            GroupService.startGroupWithoutMatchMaking({
+                                groupId: data.groupId,
+                                Environment: ModelResponse.Payload.Environment,
                                 Mode: ModelResponse.Payload.Mode,
                                 Scenario: ModelResponse.Payload.Scenario,
-                                State: 0,
-                                Gender: 0,
-                            }, groups_enums_1.membersLimit.Classic, undefined, 0, 0, undefined)];
-                    case 25:
-                        MatchMakingResult = _d.sent();
-                        if (!(MatchMakingResult !== null)) return [3, 31];
-                        return [4, (0, game_model_1.CreateParty)()];
-                    case 26:
-                        gameId = _d.sent();
-                        GroupData.RemoveGroup(data.groupId);
-                        return [4, model_redis_1.GroupRedis.DeleteGroup(data.groupId)];
-                    case 27:
-                        _d.sent();
-                        return [4, users_model_1.default.SetGameIdToUsers(ModelResponse.Payload.Members.map(function (item) { return item._id; }), gameId)];
-                    case 28:
-                        _d.sent();
-                        return [4, classic_data_layer_1.default.InitParty({
-                                _id: gameId,
                                 Members: Members,
-                                EnvironmentId: ModelResponse.Payload.Environment,
-                                GameMode: ModelResponse.Payload.Mode,
-                                Scenario: ModelResponse.Payload.Scenario
-                            }, socket)];
-                    case 29:
-                        _d.sent();
-                        for (_b = 0, _c = MatchMakingResult.MatchedGroupsId; _b < _c.length; _b++) {
-                            groupId = _c[_b];
-                            GroupsWs._emitToRoom("Group@".concat(groupId), groups_events_ws_1.default.StartGroup, { gameId: gameId });
+                                socket: socket,
+                            });
                         }
-                        return [4, groups_model_1.default.DeleteGroups(MatchMakingResult.MatchedGroupsId)];
-                    case 30:
-                        _d.sent();
-                        return [3, 32];
-                    case 31:
-                        GroupsWs._emitToRoom("Group@".concat(data.groupId), groups_events_ws_1.default.MatchMaking, { status: true });
-                        _d.label = 32;
-                    case 32: return [3, 34];
-                    case 33:
-                        e_3 = _d.sent();
+                        else {
+                            GroupService.startGroupWithMatchMaking({
+                                Members: Members,
+                                date: ModelResponse.Payload.Date,
+                                Mode: ModelResponse.Payload.Mode,
+                                Scenario: ModelResponse.Payload.Scenario,
+                                groupId: data.groupId,
+                                Environment: ModelResponse.Payload.Environment,
+                                socket: socket,
+                            });
+                        }
+                        return [3, 4];
+                    case 3:
+                        e_3 = _a.sent();
                         console.trace(e_3);
-                        return [3, 34];
-                    case 34: return [2];
+                        return [3, 4];
+                    case 4: return [2];
                 }
             });
         });

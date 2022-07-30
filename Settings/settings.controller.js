@@ -46,14 +46,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameSettingController = void 0;
+var status_1 = __importDefault(require("../Core/status"));
 var router_1 = require("../Core/decorators/router");
 var auth_guard_1 = require("../middlewares/auth.guard");
-var token_auth_1 = __importDefault(require("../utils/token.auth"));
 var game_redis_1 = __importDefault(require("../Scenarios/models/game.redis"));
+var token_auth_1 = __importDefault(require("../utils/token.auth"));
 var settings_redis_1 = __importDefault(require("./settings.redis"));
 var GameSettingController = (function () {
     function GameSettingController() {
     }
+    GameSettingController.prototype.SetBazaarToken = function (req, res) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                try {
+                    res.send({ Status: status_1.default.PROCCESS_SUCCESS, Code: req.params.code });
+                }
+                catch (error) {
+                    res.send({ Status: status_1.default.PROCCESS_FAILED });
+                }
+                return [2];
+            });
+        });
+    };
     GameSettingController.prototype.ScenarioPrice = function (req, res) {
         return __awaiter(this, void 0, void 0, function () {
             var ClassicPrice, FilimoPrice, ClassicLimit, FilimoLimit, data, token, e_1;
@@ -79,6 +93,7 @@ var GameSettingController = (function () {
                             ClassicLimit: ClassicLimit,
                             FilimoLimit: FilimoLimit,
                         };
+                        console.log("Game Settings: ", data);
                         token = token_auth_1.default.Create(data, req.headers.authId);
                         res.setHeader("auth", token);
                         res.status(200).send(data);
@@ -93,6 +108,9 @@ var GameSettingController = (function () {
             });
         });
     };
+    __decorate([
+        (0, router_1.Get)("bazaar")
+    ], GameSettingController.prototype, "SetBazaarToken", null);
     __decorate([
         (0, router_1.Post)("/")
     ], GameSettingController.prototype, "ScenarioPrice", null);

@@ -59,7 +59,7 @@ var GameRedis = (function () {
                                 return [2, 1];
                             }
                             else if (scenario === "Filimo") {
-                                return [2, 10];
+                                return [2, 5];
                             }
                         }
                         return [2, parseInt(data)];

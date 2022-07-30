@@ -112,6 +112,7 @@ var InventoryModel = (function () {
                             }];
                     case 12:
                         e_1 = _c.sent();
+                        console.log(e_1);
                         return [2, {
                                 Message: "Process Failed",
                                 Status: status_1.default.PROCCESS_FAILED

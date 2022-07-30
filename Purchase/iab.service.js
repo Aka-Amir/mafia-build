@@ -56,7 +56,7 @@ var axios_1 = __importDefault(require("axios"));
 var InAppBilling = (function () {
     function InAppBilling() {
     }
-    InAppBilling.InitBazaar = function (ClientId, ClientSecret, PackageName, Code, RedirectURL) {
+    InAppBilling.InitBazaar = function (ClientId, ClientSecret, PackageName, RedirectURL) {
         return __awaiter(this, void 0, void 0, function () {
             var Tokens;
             return __generator(this, function (_a) {
@@ -64,7 +64,6 @@ var InAppBilling = (function () {
                     case 0:
                         this.ClientId = ClientId;
                         this.ClientSecret = ClientSecret;
-                        this.Code = Code;
                         this.PackageName = PackageName;
                         this.RedirectURL = RedirectURL;
                         return [4, this.GetAccessToken()];
@@ -84,6 +83,9 @@ var InAppBilling = (function () {
     InAppBilling.InitMyket = function (XAccessToken) {
         this.XAccessToken = XAccessToken;
     };
+    InAppBilling.SetBazaarCode = function (Code) {
+        this.Code = Code;
+    };
     InAppBilling.GetAccessToken = function () {
         var _a, _b, _c, _d;
         return __awaiter(this, void 0, void 0, function () {
@@ -102,7 +104,7 @@ var InAppBilling = (function () {
                                 method: "POST",
                                 url: "https://pardakht.cafebazaar.ir/devapi/v2/auth/token/",
                                 data: data,
-                                headers: __assign({}, data.getHeaders())
+                                headers: __assign({}, data.getHeaders()),
                             })];
                     case 1:
                         Result = _e.sent();
@@ -113,7 +115,7 @@ var InAppBilling = (function () {
                                 scope: Result.data.scope,
                                 refresh_token: Result.data.refresh_token,
                                 error: "",
-                                error_description: ""
+                                error_description: "",
                             }];
                     case 2:
                         error_1 = _e.sent();
@@ -148,7 +150,7 @@ var InAppBilling = (function () {
                                 method: "POST",
                                 url: "https://pardakht.cafebazaar.ir/devapi/v2/auth/token/",
                                 data: data,
-                                headers: __assign({}, data.getHeaders())
+                                headers: __assign({}, data.getHeaders()),
                             })];
                     case 1:
                         Result = _e.sent();
@@ -156,7 +158,7 @@ var InAppBilling = (function () {
                                 access_token: Result.data.access_token,
                                 token_type: Result.data.token_type,
                                 expires_in: Result.data.expires_in,
-                                scope: Result.data.scope
+                                scope: Result.data.scope,
                             }];
                     case 2:
                         error_2 = _e.sent();
@@ -182,10 +184,11 @@ var InAppBilling = (function () {
                         _e.trys.push([0, 3, , 4]);
                         return [4, this.GetAccessTokenWithRefreshToken()];
                     case 1:
-                        access_token = (_e.sent()).access_token;
+                        access_token = (_e.sent())
+                            .access_token;
                         return [4, (0, axios_1.default)({
                                 method: "GET",
-                                url: "https://pardakht.cafebazaar.ir/devapi/v2/api/validate/".concat(this.PackageName, "/inapp/").concat(SKU, "/purchases/").concat(purchaseToken, "?access_token=").concat(access_token)
+                                url: "https://pardakht.cafebazaar.ir/devapi/v2/api/validate/".concat(this.PackageName, "/inapp/").concat(SKU, "/purchases/").concat(purchaseToken, "?access_token=").concat(access_token),
                             })];
                     case 2:
                         Result = _e.sent();
@@ -196,7 +199,7 @@ var InAppBilling = (function () {
                                 time: Result.data.purchaseTime,
                                 developerPayload: Result.data.developerPayload,
                                 error: "",
-                                error_description: ""
+                                error_description: "",
                             }];
                     case 3:
                         e_1 = _e.sent();
@@ -207,7 +210,7 @@ var InAppBilling = (function () {
                                 isUsed: false,
                                 refund: false,
                                 time: 0,
-                                developerPayload: ""
+                                developerPayload: "",
                             }];
                     case 4: return [2];
                 }
@@ -224,9 +227,9 @@ var InAppBilling = (function () {
                         return [4, (0, axios_1.default)({
                                 method: "get",
                                 headers: {
-                                    "X-Access-Token": this.XAccessToken
+                                    "X-Access-Token": this.XAccessToken,
                                 },
-                                url: "https://developer.myket.ir/api/applications/".concat(this.PackageName, "/purchases/products/").concat(SKU, "/tokens/").concat(PurchaseToken)
+                                url: "https://developer.myket.ir/api/applications/".concat(this.PackageName, "/purchases/products/").concat(SKU, "/tokens/").concat(PurchaseToken),
                             })];
                     case 1:
                         Result = _a.sent();
@@ -255,13 +258,13 @@ var InAppBilling = (function () {
             });
         });
     };
-    InAppBilling.ClientId = "Ffh9v3xsUNdZ9duJSwpqtFE9SZeBmtJ9ne25dy51";
-    InAppBilling.ClientSecret = "7o8BMtJn3RVLsJDswXkFLLKDdWtU6m0ejFpnmlGhR35i58WEbnStUvooAlpE";
-    InAppBilling.RedirectURL = "http://127.0.0.1:4500";
+    InAppBilling.ClientId = "tzP0rJnZRKqvVrU96jCGoC1eS4Q8Euu9GMcOeqyg";
+    InAppBilling.ClientSecret = "xyQWcpz58WWPtmoRuNslYQ71iuuiJoDlx7LiG2p6zwGGQm8ino1Yirzah1vi";
+    InAppBilling.RedirectURL = "http://game.mafia-nights.ir:4500/game_setting/baazar";
+    InAppBilling.Code = "vyL1xfEPEMtdNmsnNaEpMt13SmsftZ";
+    InAppBilling.RefreshToken = "GV4ytnqCocjSEGZlBjEMZtCOFDHJZB";
     InAppBilling.PackageName = "com.RedTree.MafiaNights";
-    InAppBilling.Code = "tyf6XEhEMyp1KWAf0OyLryECjXrFe5";
     InAppBilling.XAccessToken = "c93507dc-2a99-4f00-ad8c-05377b18e8cd";
-    InAppBilling.RefreshToken = "0AEKHn1qUqw4Tq8kY2AlNb7yrGhIAk";
     return InAppBilling;
 }());
 exports.InAppBilling = InAppBilling;

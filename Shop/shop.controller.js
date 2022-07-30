@@ -187,10 +187,8 @@ var ShopController = (function () {
                         ModelResponse = {
                             Message: "Process Success",
                             Status: status_1.default.PROCCESS_SUCCESS,
-                            Payload: {
-                                PrimaryCoin: UserInfo.PrimaryCoin,
-                                SecondaryCoin: UserInfo.SecondaryCoin
-                            }
+                            PrimaryCoin: UserInfo.PrimaryCoin,
+                            SecondaryCoin: UserInfo.SecondaryCoin
                         };
                         auth = token_auth_1.default.Create(ModelResponse, req.headers.authId);
                         res.setHeader("auth", auth);

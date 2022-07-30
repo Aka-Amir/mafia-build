@@ -76,6 +76,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var game_redis_1 = __importDefault(require("../models/game.redis"));
 var inventory_model_1 = __importDefault(require("../../Inventory/inventory.model"));
+var Filimo = require("../../Core/LevelAndXP/LevelAndXP").Filimo;
 var CoreScenario = require("./core.scenario");
 var Scores = require("../score/filimo.score.json");
 var fs = require("fs");
@@ -124,15 +125,15 @@ var FilimoScenario = (function (_super) {
         return _super !== null && _super.apply(this, arguments) || this;
     }
     FilimoScenario.JoinToRoom = function (data, socket, cb) {
-        if (cb === void 0) { cb = function () {
-        }; }
+        if (cb === void 0) { cb = function () { }; }
         var roomName;
         if (data.GameId) {
             roomName = this.RoomsTools.party(data.GameId.toString());
             socket.join(roomName);
         }
         console.log("[".concat(Date.now(), "]: ").concat(this.io.sockets.adapter.rooms[this.RoomsTools.party(data.GameId)].length));
-        if (this.io.sockets.adapter.rooms[this.RoomsTools.party(data.GameId)].length === 12)
+        if (this.io.sockets.adapter.rooms[this.RoomsTools.party(data.GameId)]
+            .length === 12)
             cb();
         return true;
     };
@@ -171,7 +172,7 @@ var FilimoScenario = (function (_super) {
     FilimoScenario.GameConfigTools = {
         Increase: function (_a) {
             var GameId = _a.GameId, Path = _a.Path, _c = _a.Count, Count = _c === void 0 ? 1 : _c;
-            return FilimoScenario.GameConfigs[GameId][Path] += Count;
+            return (FilimoScenario.GameConfigs[GameId][Path] += Count);
         },
         Get: function (_a) {
             var GameId = _a.GameId, Path = _a.Path;
@@ -208,7 +209,10 @@ var FilimoScenario = (function (_super) {
         GetClients: function () {
             var _this = this;
             return new Promise(function (resolve, reject) {
-                _this.io.of(NameSpace).in(Room).clients(function (error, socketIds) {
+                _this.io
+                    .of(NameSpace)
+                    .in(Room)
+                    .clients(function (error, socketIds) {
                     if (error)
                         reject(error);
                     else
@@ -223,15 +227,20 @@ var FilimoScenario = (function (_super) {
     FilimoScenario.RoomsTools = {
         Destroy: function (Room, NameSpace) {
             if (NameSpace === void 0) { NameSpace = "/"; }
-            this.io.of(NameSpace).in(Room).clients(function (error, socketIds) {
+            this.io
+                .of(NameSpace)
+                .in(Room)
+                .clients(function (error, socketIds) {
                 if (error)
                     throw error;
-                socketIds.forEach(function (socketId) { return io.sockets.sockets[socketId].leave(Room); });
+                socketIds.forEach(function (socketId) {
+                    return io.sockets.sockets[socketId].leave(Room);
+                });
             });
         },
         party: function (GameId) {
             return "Party@".concat(GameId);
-        }
+        },
     };
     FilimoScenario.IsGameGoingOn = function (_a) {
         var GameId = _a.GameId;
@@ -268,7 +277,7 @@ var FilimoScenario = (function (_super) {
             _id: GameId,
             newData: {
                 IsGameEnded: true,
-            }
+            },
         });
         delete _b.PartiesInfo[GameId];
     };
@@ -279,22 +288,24 @@ var FilimoScenario = (function (_super) {
             _id: GameId,
             newData: {
                 EndTime: EndTime,
-                Win: Win
-            }
+                Win: Win,
+            },
         });
         _b.ScoreBoardService.CalculateScoreBoard(GameId);
         var _c = _b.GetPartyInfo({ GameId: GameId }), StartTime = _c.StartTime, ScoreBoard = _c.ScoreBoard;
         ScoreBoard.forEach(function (user) { return __awaiter(void 0, void 0, void 0, function () {
             return __generator(_b, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4, UserManager.IncreasePrimaryCoin(user.UserId, Quit.includes(user.UserId) ? 0 : this.ScoreBoardService.RewardCalculate(user.MvpRank))];
+                    case 0: return [4, UserManager.IncreasePrimaryCoin(user.UserId, Quit.includes(user.UserId)
+                            ? 0
+                            : this.ScoreBoardService.RewardCalculate(user.MvpRank))];
                     case 1:
                         _a.sent();
                         return [4, UserManager.ResetGame({
                                 gameId: GameId,
                                 userId: user.UserId,
                                 win: user.Side === Win,
-                                xp: user.Score * user.Booster
+                                xp: user.Score * user.Booster,
                             })];
                     case 2:
                         _a.sent();
@@ -305,7 +316,7 @@ var FilimoScenario = (function (_super) {
         _b.SendMessageToParty({
             GameId: GameId,
             Event: Triggers.ScoreBoard,
-            Message: ScoreBoard
+            Message: ScoreBoard,
         });
         _b.SendMessageToParty({
             GameId: GameId,
@@ -313,17 +324,18 @@ var FilimoScenario = (function (_super) {
             Message: {
                 GameStatus: Win,
                 GameTime: _b.msToTime(EndTime - StartTime),
-            }
+            },
         });
-        GameModel.SaveResult(_b.GetPartyInfo({ GameId: GameId }))
-            .then(function () { return _b.RemoveParty({ GameId: GameId }); });
+        GameModel.SaveResult(_b.GetPartyInfo({ GameId: GameId })).then(function () {
+            return _b.RemoveParty({ GameId: GameId });
+        });
         console.log("GameEnded");
     };
     FilimoScenario.msToTime = function (duration) {
         var seconds = Math.floor((duration / 1000) % 60), minutes = Math.floor((duration / (1000 * 60)) % 60), hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
-        hours = (hours < 10) ? "0" + hours : hours;
-        minutes = (minutes < 10) ? "0" + minutes : minutes;
-        seconds = (seconds < 10) ? "0" + seconds : seconds;
+        hours = hours < 10 ? "0" + hours : hours;
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
         return hours + ":" + minutes + ":" + seconds;
     };
     FilimoScenario.ScoreBoard = function (_a) {
@@ -342,7 +354,7 @@ var FilimoScenario = (function (_super) {
                 StartTime: StartTime,
                 EndTime: EndTime,
                 GameTime: _b.msToTime(EndTime - StartTime),
-            }
+            },
         });
     };
     FilimoScenario.CheckIsGameGoingOn = function (_a) {
@@ -379,12 +391,17 @@ var FilimoScenario = (function (_super) {
     };
     FilimoScenario.SendMessageToRole = function (Input) {
         try {
-            Input.asObject === undefined ? Input.asObject = true : void 0;
-            var UserData_1 = _b.GetUserByRole({ Role: Input.UserRole, GameId: Input.GameId });
+            Input.asObject === undefined ? (Input.asObject = true) : void 0;
+            var UserData_1 = _b.GetUserByRole({
+                Role: Input.UserRole,
+                GameId: Input.GameId,
+            });
             var UsersNode = Object.values(_b.io.sockets.sockets);
             var UserNode = UsersNode.find(function (item) { return item.handshake.query.userId === UserData_1.UserId; });
             if (CheckValidation(SendMessageToRoleInterface, Input) && UserNode) {
-                var data = !Input.asObject ? JSON.stringify(Input.Message) : Input.Message;
+                var data = !Input.asObject
+                    ? JSON.stringify(Input.Message)
+                    : Input.Message;
                 data = _b.EncryptData(data);
                 _b.io.to(UserNode.id).emit(Input.Event, data);
             }
@@ -400,7 +417,7 @@ var FilimoScenario = (function (_super) {
     FilimoScenario.GetUserByRole = function (_a) {
         var GameId = _a.GameId, Role = _a.Role;
         try {
-            var UsersData = (_b.GetPartyInfo({ GameId: GameId })).UsersData;
+            var UsersData = _b.GetPartyInfo({ GameId: GameId }).UsersData;
             return UsersData.find(function (item) { return item.UserRole === Role; });
         }
         catch (e) {
@@ -408,7 +425,7 @@ var FilimoScenario = (function (_super) {
         }
     };
     FilimoScenario.InitParty = function (data) { return __awaiter(void 0, void 0, void 0, function () {
-        var _id, Members, GameMode, EnvironmentId, Scenario, BasicData, UsersData, ClassicPrice, _i, _a, user, _c, _d, e_1;
+        var _id, Members, GameMode, EnvironmentId, Scenario, BasicData, UsersData, FilimoPrice, nonVipUsers, _i, _a, user, _c, _d, e_1;
         var _e;
         return __generator(_b, function (_f) {
             switch (_f.label) {
@@ -421,10 +438,7 @@ var FilimoScenario = (function (_super) {
                     UsersData = (_f.sent()).Payload;
                     return [4, game_redis_1.default.GetPrice("Filimo")];
                 case 2:
-                    ClassicPrice = _f.sent();
-                    return [4, UserManager.GamePay(Members, parseInt(ClassicPrice))];
-                case 3:
-                    _f.sent();
+                    FilimoPrice = _f.sent();
                     BasicData.UsersData = UsersData.map(function (item) {
                         return {
                             UserId: item._id,
@@ -435,6 +449,16 @@ var FilimoScenario = (function (_super) {
                             Index: 0,
                         };
                     });
+                    nonVipUsers = BasicData.UsersData.filter(function (_a) {
+                        var Vip = _a.Vip;
+                        return !Vip;
+                    }).map(function (_a) {
+                        var UserId = _a.UserId;
+                        return UserId;
+                    });
+                    return [4, UserManager.GamePay(nonVipUsers, parseInt(FilimoPrice))];
+                case 3:
+                    _f.sent();
                     BasicData.Members = Members;
                     BasicData._id = _id;
                     BasicData.IsGameEnded = false;
@@ -520,7 +544,7 @@ var FilimoScenario = (function (_super) {
                 NoonSleepStatus: CourtList.length > 1,
                 RedCarpet: "",
                 GreenPath: "",
-            }
+            },
         });
         if (CourtList.length === 0) {
             console.log("StartDay From End First Vote Proccess");
@@ -540,8 +564,8 @@ var FilimoScenario = (function (_super) {
                 _id: GameId,
                 newData: {
                     Court: CourtList,
-                    GameState: GameStates.CourtSpeak
-                }
+                    GameState: GameStates.CourtSpeak,
+                },
             });
             if (CurrentTurnUser) {
                 var isAlive = GameInfo.Alive.includes(CurrentTurnUser);
@@ -550,15 +574,15 @@ var FilimoScenario = (function (_super) {
                     _b.UpdatePartyInfo({
                         _id: GameId,
                         newData: {
-                            CurrentTurnUser: CurrentTurnUser
-                        }
+                            CurrentTurnUser: CurrentTurnUser,
+                        },
                     });
                     _b.SendMessageToParty({
                         GameId: GameId,
                         Event: Triggers.PassCourtSpeak,
                         Message: {
-                            UserId: CurrentTurnUser
-                        }
+                            UserId: CurrentTurnUser,
+                        },
                     });
                 }
                 else {
@@ -594,13 +618,15 @@ var FilimoScenario = (function (_super) {
     FilimoScenario.EndCourtSpeakProcess = function (_a) {
         var GameId = _a.GameId;
         console.log("EndCourtSpeakProcess");
-        var _c = _b.GetPartyInfo({ GameId: GameId }), CourtQueue = _c.CourtQueue, NoonSleepStatus = _c.NoonSleepStatus;
+        var _c = _b.GetPartyInfo({
+            GameId: GameId,
+        }), CourtQueue = _c.CourtQueue, NoonSleepStatus = _c.NoonSleepStatus;
         console.log({ NoonSleepStatus: NoonSleepStatus, Section: 2 });
         _b.UpdatePartyInfo({
             _id: GameId,
             newData: {
-                GameState: GameStates.SecondVote
-            }
+                GameState: GameStates.SecondVote,
+            },
         });
         _b.SendMessageToParty({
             GameId: GameId,
@@ -608,8 +634,8 @@ var FilimoScenario = (function (_super) {
             Message: {
                 UserId: CourtQueue[0],
                 IsCourt: true,
-                NoonSleep: NoonSleepStatus
-            }
+                NoonSleep: NoonSleepStatus,
+            },
         });
     };
     FilimoScenario.Quit = function (_a) {
@@ -619,7 +645,7 @@ var FilimoScenario = (function (_super) {
                 this.PushItemToPartyInfo({
                     _id: GameId,
                     Path: "Quit",
-                    Item: SocketNode.handshake.query.userId
+                    Item: SocketNode.handshake.query.userId,
                 });
                 this.PushToKills({
                     GameId: GameId,
@@ -641,8 +667,15 @@ var FilimoScenario = (function (_super) {
                 switch (_e.label) {
                     case 0:
                         console.log("ConcludeTheNight");
-                        this.GameConfigTools.Increase({ GameId: GameId, Path: "ConcludeTheNight", Count: 1 });
-                        ConcludeTheNight = this.GameConfigTools.Get({ GameId: GameId, Path: "ConcludeTheNight" });
+                        this.GameConfigTools.Increase({
+                            GameId: GameId,
+                            Path: "ConcludeTheNight",
+                            Count: 1,
+                        });
+                        ConcludeTheNight = this.GameConfigTools.Get({
+                            GameId: GameId,
+                            Path: "ConcludeTheNight",
+                        });
                         if (!(ConcludeTheNight === 1)) return [3, 2];
                         console.log("Check Start Conclude The Night: ".concat(ConcludeTheNight));
                         console.log("First User Is : ".concat((_d = (_c = SocketNode === null || SocketNode === void 0 ? void 0 : SocketNode.handshake) === null || _c === void 0 ? void 0 : _c.query) === null || _d === void 0 ? void 0 : _d.userId));
@@ -655,12 +688,11 @@ var FilimoScenario = (function (_super) {
             });
         });
     };
-    FilimoScenario.SetRoleToUsers2 = function (GameId) {
+    FilimoScenario.SetRoleToUsers = function (GameId) {
         try {
             var PartyInfo = _b.GetPartyInfo({ GameId: GameId });
             var config = {
-                "6266456eddf8f96098e15a30": Roles.GodFather,
-                "626530cf089a8df9f9612a44": Roles.Detective,
+                "62d7bd64049b2c8bf7f28366": Roles.GodFather,
             };
             var configId_1 = {};
             for (var user in config) {
@@ -668,7 +700,7 @@ var FilimoScenario = (function (_super) {
                     configId_1[user] = config[user];
                 }
             }
-            var membersLength = (PartyInfo.Members.length) - Object.values(configId_1).length;
+            var membersLength = PartyInfo.Members.length - Object.values(configId_1).length;
             var nums = new Set();
             while (nums.size !== membersLength) {
                 nums.add(Math.floor(Math.random() * membersLength));
@@ -676,7 +708,7 @@ var FilimoScenario = (function (_super) {
             var indexes = Array.from(nums);
             var RolesInGame = Object.values(Roles);
             RolesInGame = RolesInGame.filter(function (role) {
-                return !(Object.values(configId_1).includes(role));
+                return !Object.values(configId_1).includes(role);
             });
             var j = 0;
             for (var i = 0; i < PartyInfo.Members.length; i++) {
@@ -693,14 +725,17 @@ var FilimoScenario = (function (_super) {
                     j++;
                 }
             }
-            _b.UpdatePartyInfo({ _id: GameId, newData: { UsersData: PartyInfo.UsersData } });
+            _b.UpdatePartyInfo({
+                _id: GameId,
+                newData: { UsersData: PartyInfo.UsersData },
+            });
             return true;
         }
         catch (e) {
             return false;
         }
     };
-    FilimoScenario.SetRoleToUsers = function (GameId) {
+    FilimoScenario.SetRoleToUsers2 = function (GameId) {
         try {
             var PartyInfo = _b.GetPartyInfo({ GameId: GameId });
             var nums = new Set();
@@ -714,7 +749,10 @@ var FilimoScenario = (function (_super) {
                 PartyInfo.UsersData[i].UserRole = userRole;
                 _b.ScoreBoardService.SetRoleAndSide(GameId, PartyInfo.UsersData[i].UserId, userRole);
             }
-            _b.UpdatePartyInfo({ _id: GameId, newData: { UsersData: PartyInfo.UsersData } });
+            _b.UpdatePartyInfo({
+                _id: GameId,
+                newData: { UsersData: PartyInfo.UsersData },
+            });
             console.log("UsersData: ", PartyInfo.UsersData);
             return true;
         }
@@ -733,13 +771,16 @@ var FilimoScenario = (function (_super) {
                     PartyInfo = _a.sent();
                     nums = new Set();
                     while (nums.size !== PartyInfo.Members.length) {
-                        nums.add((Math.floor(Math.random() * PartyInfo.Members.length)) + 1);
+                        nums.add(Math.floor(Math.random() * PartyInfo.Members.length) + 1);
                     }
                     indexes = Array.from(nums);
                     for (index in PartyInfo.Members) {
                         PartyInfo.UsersData[parseInt(index)].Index = indexes[parseInt(index)];
                     }
-                    return [4, this.UpdatePartyInfo({ _id: GameId, newData: { UsersData: PartyInfo.UsersData } })];
+                    return [4, this.UpdatePartyInfo({
+                            _id: GameId,
+                            newData: { UsersData: PartyInfo.UsersData },
+                        })];
                 case 2:
                     _a.sent();
                     return [2, true];
@@ -791,7 +832,7 @@ var FilimoScenario = (function (_super) {
                 var Index = UsersList.findIndex(function (user) {
                     return user.UserId === PartyInfo_1.Starter;
                 });
-                var SpeakList = __spreadArray(__spreadArray([], (UsersList.slice(Index)), true), (UsersList.slice(0, Index)), true);
+                var SpeakList = __spreadArray(__spreadArray([], UsersList.slice(Index), true), UsersList.slice(0, Index), true);
                 SpeakList = SpeakList.filter(function (user) {
                     return PartyInfo_1.Alive.includes(user.UserId);
                 });
@@ -807,16 +848,17 @@ var FilimoScenario = (function (_super) {
                 var Index = UsersList.findIndex(function (user) {
                     return user.UserId === PartyInfo_1.Starter;
                 });
-                var SpeakList = __spreadArray(__spreadArray([], (UsersList.slice(Index + 2)), true), (UsersList.slice(0, Index + 2)), true);
+                var SpeakList = __spreadArray(__spreadArray([], UsersList.slice(Index + 2), true), UsersList.slice(0, Index + 2), true);
                 SpeakList = SpeakList.filter(function (user) {
                     return PartyInfo_1.Alive.includes(user.UserId);
                 });
                 _b.UpdatePartyInfo({
-                    _id: GameId, newData: {
+                    _id: GameId,
+                    newData: {
                         Starter: SpeakList[0].UserId,
                         SpeakList: SpeakList,
                         VoteList: SpeakList,
-                    }
+                    },
                 });
                 return true;
             }
@@ -827,15 +869,16 @@ var FilimoScenario = (function (_super) {
         }
     };
     FilimoScenario.Execute = function (GameId, data) { return __awaiter(void 0, void 0, void 0, function () {
-        var IsStarted;
-        return __generator(_b, function (_a) {
-            IsStarted = this.GetPartyInfo({ GameId: GameId }).IsStarted;
+        var _a, IsStarted, UsersData;
+        return __generator(_b, function (_c) {
+            _a = this.GetPartyInfo({ GameId: GameId }), IsStarted = _a.IsStarted, UsersData = _a.UsersData;
             if (!IsStarted || BYPASS) {
+                console.log("UsersData: ", UsersData);
                 console.log("IsStarted?: ".concat(IsStarted));
                 try {
                     this.UpdatePartyInfo({
                         _id: GameId,
-                        newData: { IsStarted: true, _id: GameId }
+                        newData: { IsStarted: true, _id: GameId },
                     });
                     this.StartIntroNight({ GameId: GameId });
                     setTimeout(function () { return __awaiter(void 0, void 0, void 0, function () {
@@ -843,7 +886,10 @@ var FilimoScenario = (function (_super) {
                             switch (_a.label) {
                                 case 0:
                                     console.log("StartDay From Execute(Start Game)");
-                                    return [4, FilimoScenario.StartDay({ GameId: GameId, SocketNode: data.SocketNode })];
+                                    return [4, FilimoScenario.StartDay({
+                                            GameId: GameId,
+                                            SocketNode: data.SocketNode,
+                                        })];
                                 case 1:
                                     _a.sent();
                                     return [2];
@@ -866,7 +912,7 @@ var FilimoScenario = (function (_super) {
             GameId: GameId,
             Event: Triggers.IntroNight,
             Message: {
-                GameState: true
+                GameState: true,
             },
         });
     };
@@ -905,7 +951,7 @@ var FilimoScenario = (function (_super) {
                 _id: _id,
                 Path: Path,
                 Item: Item,
-                PartiesInfo: _b.PartiesInfo[_id][Path]
+                PartiesInfo: _b.PartiesInfo[_id][Path],
             });
             console.trace(e);
             return false;
@@ -930,14 +976,14 @@ var FilimoScenario = (function (_super) {
                 _b.PushItemToPartyInfo({
                     _id: GameId,
                     Path: "ChallengeList",
-                    Item: UserId
+                    Item: UserId,
                 });
                 _b.SendMessageToParty({
                     GameId: GameId,
                     Event: Triggers.ChallengeRequest,
                     Message: {
-                        Challenge: UserId
-                    }
+                        Challenge: UserId,
+                    },
                 });
             }
         }
@@ -954,25 +1000,27 @@ var FilimoScenario = (function (_super) {
             console.log("AcceptChallenge: ", {
                 ChallengeList: ChallengeList,
                 CurrentTurnUser: CurrentTurnUser,
-                UserId: UserId
+                UserId: UserId,
             });
             var isChallengerInChallengeList = ChallengeList === null || ChallengeList === void 0 ? void 0 : ChallengeList.includes(Challenger);
             var canUserAcceptChallenge = CurrentTurnUser === UserId;
             var isUserAcceptingChallengeOfAnotherUser = Challenger !== UserId;
-            if (isChallengerInChallengeList && canUserAcceptChallenge && isUserAcceptingChallengeOfAnotherUser) {
+            if (isChallengerInChallengeList &&
+                canUserAcceptChallenge &&
+                isUserAcceptingChallengeOfAnotherUser) {
                 _b.UpdatePartyInfo({
                     _id: GameId,
                     newData: {
                         Challenge: Challenger,
                         ChallengeList: [],
-                    }
+                    },
                 });
                 _b.SendMessageToParty({
                     GameId: GameId,
                     Event: Triggers.AcceptChallenge,
                     Message: {
                         Challenge: Challenger,
-                    }
+                    },
                 });
             }
         }
@@ -982,31 +1030,29 @@ var FilimoScenario = (function (_super) {
         }
     };
     FilimoScenario.Ready = function (data) { return __awaiter(void 0, void 0, void 0, function () {
-        var UserInfo_1, PartyInfo, isMember, e_3;
+        var PartyInfo, isMember, e_3;
         var _this = _b;
         var _a;
         return __generator(_b, function (_c) {
             switch (_c.label) {
                 case 0:
-                    _c.trys.push([0, 4, , 5]);
-                    return [4, UserManager.GetUserById(data.UserId)];
-                case 1:
-                    UserInfo_1 = (_c.sent()).Payload;
-                    PartyInfo = this.GetPartyInfo({ GameId: UserInfo_1.GameId });
+                    _c.trys.push([0, 3, , 4]);
+                    PartyInfo = this.GetPartyInfo({ GameId: data.GameId });
                     isMember = (_a = PartyInfo.Members) === null || _a === void 0 ? void 0 : _a.includes(data.UserId);
-                    if (!isMember) return [3, 3];
-                    return [4, this.JoinToRoom({ GameId: UserInfo_1.GameId.toString() }, data.SocketNode, function () {
-                            _this.Execute(UserInfo_1.GameId, data).then();
+                    console.log("[Ready]: ".concat(isMember));
+                    if (!isMember) return [3, 2];
+                    return [4, this.JoinToRoom({ GameId: data.GameId }, data.SocketNode, function () {
+                            _this.Execute(data.GameId, data).then();
                         })];
-                case 2:
+                case 1:
                     _c.sent();
-                    _c.label = 3;
-                case 3: return [2, true];
-                case 4:
+                    _c.label = 2;
+                case 2: return [2, true];
+                case 3:
                     e_3 = _c.sent();
                     console.trace(e_3);
                     return [2, false];
-                case 5: return [2];
+                case 4: return [2];
             }
         });
     }); };
@@ -1014,7 +1060,8 @@ var FilimoScenario = (function (_super) {
         var GameId = _a.GameId, SocketNode = _a.SocketNode, _c = _a.IsStarted, IsStarted = _c === void 0 ? false : _c;
         var GameInfo = _b.GetPartyInfo({ GameId: GameId });
         var SpeakList = GameInfo.SpeakList || [];
-        if (GameInfo.CurrentTurnUser === (SocketNode === null || SocketNode === void 0 ? void 0 : SocketNode.handshake.query.userId) || IsStarted) {
+        if (GameInfo.CurrentTurnUser === (SocketNode === null || SocketNode === void 0 ? void 0 : SocketNode.handshake.query.userId) ||
+            IsStarted) {
             console.log("PassTurn: ".concat(SocketNode.handshake.query.userId));
             if (SpeakList.length === 0) {
                 _b.EndPassTurnProcess({ GameId: GameId }).then();
@@ -1038,23 +1085,29 @@ var FilimoScenario = (function (_super) {
             }
             else {
                 currentTurnUser = {
-                    UserId: GameInfo.Challenge
+                    UserId: GameInfo.Challenge,
                 };
                 _b.UpdatePartyInfo({
                     _id: GameId,
                     newData: {
                         ChallengeList: [],
                         Challenge: "",
-                    }
+                    },
                 });
             }
             if (currentTurnUser) {
-                _b.UpdatePartyInfo({ _id: GameId, newData: { CurrentTurnUser: currentTurnUser.UserId } });
+                _b.UpdatePartyInfo({
+                    _id: GameId,
+                    newData: { CurrentTurnUser: currentTurnUser.UserId },
+                });
                 var isAlive = GameInfo.Alive.includes(currentTurnUser.UserId);
                 var isOnline = !GameInfo.DisconnectedUsers.includes(currentTurnUser.UserId);
                 var isNotSilence = GameInfo.PsychiatristChoice !== currentTurnUser.UserId;
                 if (!isNotSilence) {
-                    _b.UpdatePartyInfo({ _id: GameId, newData: { PsychiatristChoice: "" } });
+                    _b.UpdatePartyInfo({
+                        _id: GameId,
+                        newData: { PsychiatristChoice: "" },
+                    });
                 }
                 if (isAlive && isOnline && isNotSilence) {
                     _b.SendMessageToParty({
@@ -1062,7 +1115,7 @@ var FilimoScenario = (function (_super) {
                         Event: Triggers.Speak,
                         Message: {
                             UserId: currentTurnUser.UserId,
-                            Challenge: Challenge
+                            Challenge: Challenge,
                         },
                     });
                 }
@@ -1098,7 +1151,7 @@ var FilimoScenario = (function (_super) {
                                 Event: Triggers.Speak,
                                 Message: {
                                     UserId: "End",
-                                }
+                                },
                             })];
                     case 1:
                         _d.sent();
@@ -1118,10 +1171,12 @@ var FilimoScenario = (function (_super) {
                                 ProfessionalChoice: "",
                                 SellerChoice: "",
                                 RightToChooseCard: "",
-                            }
+                            },
                         });
                         console.log("End Pass Turn Process");
-                        _c = this.GetPartyInfo({ GameId: GameId }), VoteList_1 = _c.VoteList, NoonSleepStatus_1 = _c.NoonSleepStatus;
+                        _c = this.GetPartyInfo({
+                            GameId: GameId,
+                        }), VoteList_1 = _c.VoteList, NoonSleepStatus_1 = _c.NoonSleepStatus;
                         setTimeout(function () {
                             console.log({ NoonSleepStatus: NoonSleepStatus_1, Section: 1 });
                             FilimoScenario.SendMessageToParty({
@@ -1130,8 +1185,8 @@ var FilimoScenario = (function (_super) {
                                 Message: {
                                     UserId: VoteList_1[0].UserId,
                                     IsCourt: false,
-                                    NoonSleep: NoonSleepStatus_1
-                                }
+                                    NoonSleep: NoonSleepStatus_1,
+                                },
                             });
                         }, 5000);
                         return [3, 3];
@@ -1149,7 +1204,7 @@ var FilimoScenario = (function (_super) {
         var Users = PartyInfo.UsersData.map(function (user) {
             try {
                 var UserSide = _b.GetUserSide(user.UserId, data.GameId);
-                var GetUserRole = _b.GetUserRoles(user.UserId, data.GameId);
+                var GetUserRole = _b.GetUserRole(user.UserId, data.GameId);
                 var TargetSide = _b.GetUserSide(data.UserId, data.GameId);
                 var UserRole = GetUserRole;
                 if (UserSide !== Sides.Mafia || TargetSide !== Sides.Mafia) {
@@ -1162,7 +1217,7 @@ var FilimoScenario = (function (_super) {
                 else {
                     UserRole = GetUserRole;
                 }
-                return __assign({ IsOnline: !(PartyInfo.DisconnectedUsers.includes(user.UserId)), IsAlive: PartyInfo.Alive.includes(user.UserId), UserRole: UserRole, UserSide: UserSide }, user);
+                return __assign({ IsOnline: !PartyInfo.DisconnectedUsers.includes(user.UserId), IsAlive: PartyInfo.Alive.includes(user.UserId), UserRole: UserRole, UserSide: UserSide }, user);
             }
             catch (e) {
                 console.trace(e);
@@ -1179,16 +1234,16 @@ var FilimoScenario = (function (_super) {
     FilimoScenario.ConcludeFirstVote = function (_a) {
         var GameId = _a.GameId;
         var _c = _b.GetPartyInfo({ GameId: GameId }), Votes = _c.Votes, Alive = _c.Alive;
-        var VoteLimit = (Math.round(Alive.length / 2));
+        var VoteLimit = Math.round(Alive.length / 2);
         var Victims = {};
         var TrueVotes = Votes.filter(function (vote) {
             return vote.IsVoted;
         });
         for (var _i = 0, TrueVotes_1 = TrueVotes; _i < TrueVotes_1.length; _i++) {
             var Vote = TrueVotes_1[_i];
-            Victims[Vote.VictimId] === undefined ?
-                Victims[Vote.VictimId] = new Set([Vote.UserId.toString()]) :
-                Victims[Vote.VictimId].add(Vote.UserId.toString());
+            Victims[Vote.VictimId] === undefined
+                ? (Victims[Vote.VictimId] = new Set([Vote.UserId.toString()]))
+                : Victims[Vote.VictimId].add(Vote.UserId.toString());
         }
         var CourtList = [];
         for (var Victim in Victims) {
@@ -1199,7 +1254,7 @@ var FilimoScenario = (function (_super) {
             CourtList: CourtList,
             VoteLimit: VoteLimit,
             Victims: Victims,
-            TrueVotesLength: TrueVotes.length
+            TrueVotesLength: TrueVotes.length,
         });
         return CourtList;
     };
@@ -1225,18 +1280,18 @@ var FilimoScenario = (function (_super) {
                             IsVoted: IsVoted,
                             NoonSleep: NoonSleep_1,
                             IsCourt: IsCourt_1,
-                        }
+                        },
                     });
-                    NextUser_1 = IsCourt_1 ?
-                        this.NextSecondVote({ SocketNode: SocketNode_1, GameId: GameId_1, UserId: VictimId }) :
-                        this.NextFirstVote({ SocketNode: SocketNode_1, GameId: GameId_1, UserId: VictimId });
+                    NextUser_1 = IsCourt_1
+                        ? this.NextSecondVote({ SocketNode: SocketNode_1, GameId: GameId_1, UserId: VictimId })
+                        : this.NextFirstVote({ SocketNode: SocketNode_1, GameId: GameId_1, UserId: VictimId });
                     if (!(!!NextUser_1 && SocketNode_1)) return [3, 1];
                     setTimeout(function () {
                         _this.SendMessageToUser({
                             Message: {
                                 UserId: NextUser_1,
                                 IsCourt: IsCourt_1,
-                                NoonSleep: NoonSleep_1
+                                NoonSleep: NoonSleep_1,
                             },
                             GameId: GameId_1,
                             Event: Triggers.Vote,
@@ -1248,7 +1303,7 @@ var FilimoScenario = (function (_super) {
                         Message: {
                             UserId: "End",
                             IsCourt: IsCourt_1,
-                            NoonSleep: NoonSleep_1
+                            NoonSleep: NoonSleep_1,
                         },
                         GameId: GameId_1,
                         Event: Triggers.Vote,
@@ -1295,7 +1350,10 @@ var FilimoScenario = (function (_super) {
                 connectedUser = Alive.filter(function (item) { return !Kills.includes(item); });
                 connectedUser = Alive.filter(function (item) { return !DisconnectedUsers.includes(item); });
                 this.GameConfigTools.Increase({ GameId: GameId, Path: "FirstVote" });
-                MemberLength = this.GameConfigTools.Get({ GameId: GameId, Path: "FirstVote" });
+                MemberLength = this.GameConfigTools.Get({
+                    GameId: GameId,
+                    Path: "FirstVote",
+                });
                 if (MemberLength >= connectedUser.length) {
                     setTimeout(function () { return __awaiter(void 0, void 0, void 0, function () {
                         return __generator(this, function (_a) {
@@ -1316,7 +1374,7 @@ var FilimoScenario = (function (_super) {
         var _c = _a.GameId, GameId = _c === void 0 ? "" : _c, _d = _a.UserId, UserId = _d === void 0 ? "" : _d;
         var CourtQueue = _b.GetPartyInfo({ GameId: GameId }).CourtQueue;
         var UserIndex = CourtQueue.indexOf(UserId);
-        if ((UserIndex + 1) === CourtQueue.length) {
+        if (UserIndex + 1 === CourtQueue.length) {
             return "";
         }
         else {
@@ -1329,7 +1387,10 @@ var FilimoScenario = (function (_super) {
             var MembersLength;
             return __generator(_b, function (_c) {
                 this.GameConfigTools.Increase({ GameId: GameId, Path: "SecondVote" });
-                MembersLength = this.GameConfigTools.Get({ GameId: GameId, Path: "SecondVote" });
+                MembersLength = this.GameConfigTools.Get({
+                    GameId: GameId,
+                    Path: "SecondVote",
+                });
                 console.log("".concat(this.ioTools.GetQuery(SocketNode).userId, "@EndSecondVoteForUser"), MembersLength);
                 if (MembersLength === 1) {
                     setTimeout(function () { return __awaiter(void 0, void 0, void 0, function () {
@@ -1359,7 +1420,7 @@ var FilimoScenario = (function (_super) {
                         Victims = {};
                         _loop_1 = function (Victim) {
                             Victims[Victim] = Votes.filter(function (vote) {
-                                return vote.IsVoted && vote.IsCourt && vote.VictimId.toString() === Victim;
+                                return (vote.IsVoted && vote.IsCourt && vote.VictimId.toString() === Victim);
                             }).map(function (vote) { return vote.UserId.toString(); });
                             Victims[Victim] = new Set(Victims[Victim]);
                         };
@@ -1377,20 +1438,25 @@ var FilimoScenario = (function (_super) {
                             AliveLength: Alive.length,
                         });
                         if (!(MaxVotedUsers.length === 0 || MaxVoteLength === 0)) return [3, 2];
-                        console.log("StartDay From Nobody Vote");
+                        console.log("StartNight From Nobody Vote");
                         return [4, this.StartNight({ GameId: GameId })];
                     case 1:
                         _d.sent();
                         return [3, 9];
                     case 2:
                         if (!(MaxVotedUsers.length === 1)) return [3, 7];
-                        if (!(CourtQueue.length === 1 && MaxVoteLength < this.ConcludeFirstVoteLimit(Alive.length))) return [3, 4];
+                        if (!(CourtQueue.length === 1 &&
+                            MaxVoteLength < this.ConcludeFirstVoteLimit(Alive.length))) return [3, 4];
                         console.log("StartDay From Votes Length < Vote Limit");
                         return [4, this.StartNight({ GameId: GameId })];
                     case 3:
                         _d.sent();
                         return [3, 6];
-                    case 4: return [4, this.UserExecute({ GameId: GameId, DeathLottery: false, UserId: MaxVotedUsers[0] })];
+                    case 4: return [4, this.UserExecute({
+                            GameId: GameId,
+                            DeathLottery: false,
+                            UserId: MaxVotedUsers[0],
+                        })];
                     case 5:
                         _d.sent();
                         _d.label = 6;
@@ -1398,7 +1464,7 @@ var FilimoScenario = (function (_super) {
                     case 7: return [4, this.UserExecute({
                             GameId: GameId,
                             DeathLottery: true,
-                            UserId: MaxVotedUsers[~~(Math.random() * MaxVotedUsers.length)]
+                            UserId: MaxVotedUsers[~~(Math.random() * MaxVotedUsers.length)],
                         })];
                     case 8:
                         _d.sent();
@@ -1416,22 +1482,24 @@ var FilimoScenario = (function (_super) {
                 switch (_d.label) {
                     case 0:
                         console.log("EndSecondVoteProcess");
-                        _c = this.GetPartyInfo({ GameId: GameId }), CourtQueue = _c.CourtQueue, MayorAbilityStatus = _c.MayorAbilityStatus;
+                        _c = this.GetPartyInfo({
+                            GameId: GameId,
+                        }), CourtQueue = _c.CourtQueue, MayorAbilityStatus = _c.MayorAbilityStatus;
                         CourtList = CourtQueue.toString();
-                        CanUseAbility = (MayorAbilityStatus === MayorAction.NotUsed);
+                        CanUseAbility = MayorAbilityStatus === MayorAction.NotUsed;
                         this.UpdatePartyInfo({
                             _id: GameId,
                             newData: {
-                                GameState: GameStates.Mayor
-                            }
+                                GameState: GameStates.Mayor,
+                            },
                         });
                         return [4, this.SendMessageToParty({
                                 GameId: GameId,
                                 Event: Triggers.Mayor,
                                 Message: {
                                     CourtList: CourtList,
-                                    CanUseAbility: CanUseAbility
-                                }
+                                    CanUseAbility: CanUseAbility,
+                                },
                             })];
                     case 1:
                         _d.sent();
@@ -1446,7 +1514,9 @@ var FilimoScenario = (function (_super) {
             switch (_c.label) {
                 case 0:
                     SocketNode = data.SocketNode, TargetId = data.TargetId, Action = data.Action, GameId = data.GameId;
-                    _a = this.GetPartyInfo({ GameId: GameId }), MayorAbilityStatus = _a.MayorAbilityStatus, UsersData = _a.UsersData;
+                    _a = this.GetPartyInfo({
+                        GameId: GameId,
+                    }), MayorAbilityStatus = _a.MayorAbilityStatus, UsersData = _a.UsersData;
                     console.log("Mayor: ", { TargetId: TargetId, Action: Action });
                     if (!(MayorAbilityStatus === MayorAction.NotUsed)) return [3, 6];
                     if (!(Action === MayorAction.NotUsed)) return [3, 2];
@@ -1465,7 +1535,11 @@ var FilimoScenario = (function (_super) {
                     console.log("AntiCheat Error...");
                     _c.label = 5;
                 case 5: return [3, 8];
-                case 6: return [4, this.MayorAbility({ TargetId: "", Action: MayorAction.NotUsed, GameId: GameId })];
+                case 6: return [4, this.MayorAbility({
+                        TargetId: "",
+                        Action: MayorAction.NotUsed,
+                        GameId: GameId,
+                    })];
                 case 7:
                     _c.sent();
                     _c.label = 8;
@@ -1488,16 +1562,16 @@ var FilimoScenario = (function (_super) {
                                 GameId: GameId,
                                 Event: Triggers.MayorAbility,
                                 Message: {
-                                    Action: Action
-                                }
+                                    Action: Action,
+                                },
                             });
                         }
                         else {
                             this.UpdatePartyInfo({
                                 _id: GameId,
                                 newData: {
-                                    MayorAbilityStatus: Action
-                                }
+                                    MayorAbilityStatus: Action,
+                                },
                             });
                         }
                         if (!(Action === MayorAction.CancelSecondVote)) return [3, 2];
@@ -1505,18 +1579,18 @@ var FilimoScenario = (function (_super) {
                         victimRoles = [];
                         for (_i = 0, CourtQueue_2 = CourtQueue; _i < CourtQueue_2.length; _i++) {
                             victim = CourtQueue_2[_i];
-                            victimRoles.push(this.GetUserRoles(victim, GameId));
+                            victimRoles.push(this.GetUserRole(victim, GameId));
                         }
-                        isUseful = victimRoles.every(function (i) { return i === Sides.Citizen; });
+                        isUseful = victimRoles.every(function (i) { return !MafiaRoles.includes(i); });
                         console.log("StartDay From Cancel Second Vote");
+                        this.ScoreBoardService.Mayor(GameId, false, isUseful);
                         return [4, this.StartNight({ GameId: GameId })];
                     case 1:
                         _c.sent();
-                        this.ScoreBoardService.Mayor(GameId, false, isUseful);
                         return [3, 6];
                     case 2:
                         if (!(Action === MayorAction.Execute)) return [3, 4];
-                        TargetRole = this.GetUserRoles(TargetId, GameId);
+                        TargetRole = this.GetUserRole(TargetId, GameId);
                         isUseful = MafiaRoles.includes(TargetRole);
                         return [4, this.UserExecute({ GameId: GameId, UserId: TargetId })];
                     case 3:
@@ -1555,7 +1629,7 @@ var FilimoScenario = (function (_super) {
                                 UsefulSituationRequest: true,
                                 GameState: GameStates.LastChanceCard,
                                 ExecutionAnimationUserId: ExecutedUser.Vip ? UserId : null,
-                            }
+                            },
                         });
                         return [4, this.PushToKills({ GameId: GameId, Kills: Kills })];
                     case 1:
@@ -1564,7 +1638,7 @@ var FilimoScenario = (function (_super) {
                             UserId: UserId,
                             DeathLottery: DeathLottery,
                             LastChanceCardCode: LastChanceCardCode,
-                            Alive: Alive.toString()
+                            Alive: Alive.toString(),
                         });
                         return [4, this.SendMessageToParty({
                                 GameId: GameId,
@@ -1573,8 +1647,8 @@ var FilimoScenario = (function (_super) {
                                     Alive: Alive.toString(),
                                     UserId: UserId,
                                     DeathLottery: DeathLottery,
-                                    LastChanceCardCode: LastChanceCardCode
-                                }
+                                    LastChanceCardCode: LastChanceCardCode,
+                                },
                             })];
                     case 2:
                         _c.sent();
@@ -1593,44 +1667,49 @@ var FilimoScenario = (function (_super) {
                 UserRole: UserRole,
                 Target: Target,
             });
-            SenderRole = this.GetUserRoles(UserId, GameId);
+            SenderRole = this.GetUserRole(UserId, GameId);
             MafiaShotRight = this.GetPartyInfo({ GameId: GameId }).MafiaShotRight;
             if (UserRole === Roles.GodFather && UserId === MafiaShotRight) {
                 this.UpdatePartyInfo({
                     _id: GameId,
                     newData: {
-                        MafiaChoice: Target
-                    }
+                        MafiaChoice: Target,
+                    },
                 });
             }
             console.log("UseAbility(Validation): ", {
                 SenderRole: SenderRole,
                 UserRole: UserRole,
                 UserId: UserId,
-                MafiaShotRight: MafiaShotRight
+                MafiaShotRight: MafiaShotRight,
             });
             if (SenderRole === UserRole && Target !== "") {
                 if (UserRole === Roles.Professional) {
                     this.UpdatePartyInfo({
                         _id: GameId,
                         newData: {
-                            UsefulSituationRequest: true
-                        }
+                            UsefulSituationRequest: true,
+                        },
                     });
                 }
-                if ([Roles.Doctor, Roles.DoctorLecture, Roles.Psychiatrist, Roles.Seller].includes(UserRole)) {
+                if ([
+                    Roles.Doctor,
+                    Roles.DoctorLecture,
+                    Roles.Psychiatrist,
+                    Roles.Seller,
+                ].includes(UserRole)) {
                     this.LimitedAbility({
                         GameId: GameId,
                         Target: Target,
                         UserId: UserId,
-                        UserRole: UserRole
+                        UserRole: UserRole,
                     });
                 }
                 if ([Roles.Professional, Roles.Detective, Roles.Immortal].includes(UserRole)) {
                     this.UnLimitedAbility({
                         GameId: GameId,
                         Target: Target,
-                        UserRole: UserRole
+                        UserRole: UserRole,
                     });
                 }
                 if (UserRole === Roles.Joker) {
@@ -1647,13 +1726,13 @@ var FilimoScenario = (function (_super) {
             _b.PushItemToPartyInfo({
                 _id: GameId,
                 Path: "AllJokerChoices",
-                Item: Target
+                Item: Target,
             });
             _b.UpdatePartyInfo({
                 _id: GameId,
                 newData: {
-                    JokerChoice: Target
-                }
+                    JokerChoice: Target,
+                },
             });
         }
     };
@@ -1677,7 +1756,7 @@ var FilimoScenario = (function (_super) {
             _id: GameId,
             newData: (_e = {},
                 _e[PartyInfoPath[UserRole].Action] = Target,
-                _e)
+                _e),
         });
     };
     FilimoScenario.LimitedAbility = function (_a) {
@@ -1685,11 +1764,19 @@ var FilimoScenario = (function (_super) {
         var GameId = _a.GameId, Target = _a.Target, UserId = _a.UserId, UserRole = _a.UserRole;
         var PartyInfoPath = (_c = {},
             _c[Roles.Doctor] = { Action: "DoctorChoice", Path: "DoctorSaveItself" },
-            _c[Roles.DoctorLecture] = { Action: "DoctorLectureChoice", Path: "DoctorLectureSaveItself" },
-            _c[Roles.Psychiatrist] = { Action: "PsychiatristChoice", Path: "Psychiatrist" },
+            _c[Roles.DoctorLecture] = {
+                Action: "DoctorLectureChoice",
+                Path: "DoctorLectureSaveItself",
+            },
+            _c[Roles.Psychiatrist] = {
+                Action: "PsychiatristChoice",
+                Path: "Psychiatrist",
+            },
             _c[Roles.Seller] = { Action: "SellerChoice", Path: "Seller" },
             _c);
-        var _f = _b.GetPartyInfo({ GameId: GameId }), _g = PartyInfoPath[UserRole].Path, AbilityCount = _f[_g];
+        var _f = _b.GetPartyInfo({
+            GameId: GameId,
+        }), _g = PartyInfoPath[UserRole].Path, AbilityCount = _f[_g];
         if (([Roles.Doctor, Roles.DoctorLecture].includes(UserRole) &&
             Target === UserId &&
             AbilityCount > 0) ||
@@ -1704,10 +1791,11 @@ var FilimoScenario = (function (_super) {
             _b.IncreaseItemFromPartyInfo({
                 _id: GameId,
                 Path: PartyInfoPath[UserRole].Path,
-                Count: -1
+                Count: -1,
             });
         }
-        else if (Target !== UserId && [Roles.Doctor, Roles.DoctorLecture].includes(UserRole)) {
+        else if (Target !== UserId &&
+            [Roles.Doctor, Roles.DoctorLecture].includes(UserRole)) {
             _b.UpdatePartyInfo({
                 _id: GameId,
                 newData: (_e = {},
@@ -1719,13 +1807,15 @@ var FilimoScenario = (function (_super) {
     FilimoScenario.StartDay = function (_a) {
         var GameId = _a.GameId;
         var PartyStatus = _b.CheckIsGameGoingOn({ GameId: GameId });
-        var _c = _b.GetPartyInfo({ GameId: GameId }), DayCount = _c.DayCount, ExecutionAnimationUserId = _c.ExecutionAnimationUserId;
+        var _c = _b.GetPartyInfo({
+            GameId: GameId,
+        }), DayCount = _c.DayCount, ExecutionAnimationUserId = _c.ExecutionAnimationUserId;
         if (ExecutionAnimationUserId !== null) {
             _b.UpdatePartyInfo({
                 _id: GameId,
                 newData: {
-                    ExecutionAnimationNextStep: GameStates.Day
-                }
+                    ExecutionAnimationNextStep: GameStates.Day,
+                },
             });
             _b.StartExecutionAnimation({ GameId: GameId });
             return;
@@ -1743,7 +1833,7 @@ var FilimoScenario = (function (_super) {
                 Message: {
                     Alive: Alive.toString(),
                     Kills: Kills.toString(),
-                    DayCount: DayCount_1
+                    DayCount: DayCount_1,
                 },
             });
             _b.SpeakList({ GameId: GameId });
@@ -1752,7 +1842,10 @@ var FilimoScenario = (function (_super) {
     FilimoScenario.StartSpeak = function (_a) {
         var GameId = _a.GameId, SocketNode = _a.SocketNode;
         _b.GameConfigTools.Increase({ GameId: GameId, Path: "StartSpeak" });
-        var MemberLength = _b.GameConfigTools.Get({ GameId: GameId, Path: "StartSpeak" });
+        var MemberLength = _b.GameConfigTools.Get({
+            GameId: GameId,
+            Path: "StartSpeak",
+        });
         console.log("StartSpeakRequest: ".concat(MemberLength));
         if (MemberLength === 1) {
             setTimeout(function () {
@@ -1772,7 +1865,7 @@ var FilimoScenario = (function (_super) {
             Message: {
                 UserId: _b.ioTools.GetQuery(SocketNode).userId,
                 Opinion: Opinion,
-            }
+            },
         });
     };
     FilimoScenario.SetDayData = function (_a) {
@@ -1791,8 +1884,8 @@ var FilimoScenario = (function (_super) {
                 VoteList: [],
                 Votes: [],
                 MafiaShotIsDisable: false,
-                GameState: GameStates.PassTurn
-            }
+                GameState: GameStates.PassTurn,
+            },
         });
     };
     FilimoScenario.SetNightData = function (_a) {
@@ -1803,7 +1896,7 @@ var FilimoScenario = (function (_super) {
             _id: GameId,
             newData: {
                 GameState: GameStates.Night,
-            }
+            },
         });
         _b.IncreaseNightCount({ GameId: GameId });
     };
@@ -1823,7 +1916,7 @@ var FilimoScenario = (function (_super) {
             _id: GameId,
             newData: {
                 PartyState: PartyState.Day,
-            }
+            },
         });
     };
     FilimoScenario.IncreaseNightCount = function (_a) {
@@ -1837,7 +1930,7 @@ var FilimoScenario = (function (_super) {
             _id: GameId,
             newData: {
                 PartyState: PartyState.Night,
-            }
+            },
         });
     };
     FilimoScenario.KilledUsers = function (_a) {
@@ -1856,7 +1949,7 @@ var FilimoScenario = (function (_super) {
             _b.PushItemToPartyInfo({
                 _id: GameId,
                 Path: "Kills",
-                Item: Kill
+                Item: Kill,
             });
         }
         for (var _i = 0, UniqueKills_1 = UniqueKills; _i < UniqueKills_1.length; _i++) {
@@ -1865,7 +1958,7 @@ var FilimoScenario = (function (_super) {
                 _b.PushItemToPartyInfo({
                     _id: GameId,
                     Path: "Kills",
-                    Item: User
+                    Item: User,
                 });
             }
         }
@@ -1876,7 +1969,10 @@ var FilimoScenario = (function (_super) {
     FilimoScenario.CalculateAlive = function (_a) {
         var GameId = _a.GameId;
         var _c = _b.GetPartyInfo({ GameId: GameId }), Alive = _c.Alive, Kills = _c.Kills;
-        _b.UpdatePartyInfo({ _id: GameId, newData: { Alive: Alive.filter(function (item) { return !Kills.includes(item); }) } });
+        _b.UpdatePartyInfo({
+            _id: GameId,
+            newData: { Alive: Alive.filter(function (item) { return !Kills.includes(item); }) },
+        });
     };
     FilimoScenario.GetCitizenGroup = function (_a) {
         var GameId = _a.GameId;
@@ -1896,14 +1992,14 @@ var FilimoScenario = (function (_super) {
         for (var _i = 0, MafiaRoles_1 = MafiaRoles; _i < MafiaRoles_1.length; _i++) {
             var role = MafiaRoles_1[_i];
             var users = _b.GetUserByRole({ GameId: GameId, Role: role });
-            MafiaIds.push(users.map(function (u) { return u.UserId; }));
+            MafiaIds.push(users.UserId);
         }
-        return MafiaIds.flat();
+        return MafiaIds;
     };
     FilimoScenario.ConcludeTheNight = function (_a) {
         var GameId = _a.GameId, SocketNode = _a.SocketNode;
         return __awaiter(void 0, void 0, void 0, function () {
-            var PartyInfo, Seller, NightKills, SituationRequest, Detective, isMafiaShotSuccess, isPsychiatristSuccess, isSniperShot, resultMafiaShot, result;
+            var PartyInfo, Seller, NightKills, SituationRequest, Detective, isMafiaShotSuccess, isPsychiatristSuccess, isSniperShot, isRandomShot, resultMafiaShot, result;
             return __generator(_b, function (_c) {
                 switch (_c.label) {
                     case 0:
@@ -1915,8 +2011,11 @@ var FilimoScenario = (function (_super) {
                         isMafiaShotSuccess = false;
                         isPsychiatristSuccess = false;
                         isSniperShot = false;
-                        if (PartyInfo.MafiaChoice === "")
+                        isRandomShot = false;
+                        if (PartyInfo.MafiaChoice === "") {
                             PartyInfo.MafiaChoice = this.GetRandomCitizen({ GameId: GameId });
+                            isRandomShot = true;
+                        }
                         if (PartyInfo.MafiaChoice !== "") {
                             resultMafiaShot = this.ConcludeMafiaShot(__assign({ GameId: GameId }, PartyInfo));
                             console.log("[INFO]: Mafia Shot Kill Is Seted: ".concat(resultMafiaShot));
@@ -1940,12 +2039,12 @@ var FilimoScenario = (function (_super) {
                         NightKills = NightKills.filter(function (item) { return item !== ""; });
                         this.PushToKills({
                             GameId: GameId,
-                            Kills: NightKills
+                            Kills: NightKills,
                         });
                         if (PartyInfo.DoctorLectureChoice) {
                             this.ScoreBoardService.DoctorLecture(GameId, PartyInfo.ProfessionalChoice === PartyInfo.DoctorLectureChoice);
                         }
-                        if (isMafiaShotSuccess) {
+                        if (isMafiaShotSuccess && !isRandomShot) {
                             this.ScoreBoardService.Shot(GameId);
                         }
                         if (PartyInfo.JokerChoice) {
@@ -1999,7 +2098,7 @@ var FilimoScenario = (function (_super) {
                                     SituationRequest: SituationRequest.toString(),
                                     Detective: Detective,
                                     MutedUser: isPsychiatristSuccess ? PartyInfo.PsychiatristChoice : "",
-                                }
+                                },
                             })];
                     case 3:
                         _c.sent();
@@ -2034,13 +2133,13 @@ var FilimoScenario = (function (_super) {
                         this.UpdatePartyInfo({
                             _id: GameId,
                             newData: {
-                                UsefulSituationRequest: false
-                            }
+                                UsefulSituationRequest: false,
+                            },
                         });
                         this.IncreaseItemFromPartyInfo({
                             _id: GameId,
                             Path: "SituationRequest",
-                            Count: -1
+                            Count: -1,
                         });
                         return [2, UsersRole];
                 }
@@ -2050,15 +2149,14 @@ var FilimoScenario = (function (_super) {
     FilimoScenario.ConcludeSeller = function (_a) {
         var GameId = _a.GameId, SellerChoice = _a.SellerChoice;
         var UsersData = _b.GetPartyInfo({ GameId: GameId }).UsersData;
-        var SellerChoiceRole = _b.GetUserRoles(SellerChoice, GameId);
+        var SellerChoiceRole = _b.GetUserRole(SellerChoice, GameId);
         var Side = Sides.Citizen;
-        (MafiaRoles.includes(SellerChoiceRole)) ?
-            Side = Sides.Mafia :
-            Side = Sides.Citizen;
+        MafiaRoles.includes(SellerChoiceRole)
+            ? (Side = Sides.Mafia)
+            : (Side = Sides.Citizen);
         UsersData = UsersData.map(function (user) {
             if (user.UserId === SellerChoice)
-                user.UserRole = Side === Sides.Citizen ?
-                    Roles.Citizen : Roles.Mafia;
+                user.UserRole = Side === Sides.Citizen ? Roles.Citizen : Roles.Mafia;
             return user;
         });
         _b.UpdatePartyInfo({ _id: GameId, newData: { UsersData: UsersData } });
@@ -2070,10 +2168,14 @@ var FilimoScenario = (function (_super) {
         console.log("[INFO]: Mafia Shot");
         if (MafiaChoice !== DoctorChoice) {
             console.log("[INFO]: Doctor Save Faild");
-            var SelectedUserRole = _b.GetUserRoles(MafiaChoice, GameId);
+            var SelectedUserRole = _b.GetUserRole(MafiaChoice, GameId);
             if (SelectedUserRole === Roles.Immortal && ImmortalShield > 0) {
                 console.log("[INFO]: Immortal Armore Save Him");
-                _b.IncreaseItemFromPartyInfo({ _id: GameId, Path: "ImmortalShield", Count: -1 });
+                _b.IncreaseItemFromPartyInfo({
+                    _id: GameId,
+                    Path: "ImmortalShield",
+                    Count: -1,
+                });
             }
             else {
                 console.log("[INFO]: Mafia Shot Success");
@@ -2100,7 +2202,10 @@ var FilimoScenario = (function (_super) {
         }
         else if (SelectedUserSide === Sides.Citizen) {
             console.log("[INFO]: Professional Selected Citizen");
-            var ProfessionalInfo = _b.GetUserByRole({ GameId: GameId, Role: Roles.Professional });
+            var ProfessionalInfo = _b.GetUserByRole({
+                GameId: GameId,
+                Role: Roles.Professional,
+            });
             Kill = ProfessionalInfo.UserId;
             console.log("ProfessionalInfo: ", {
                 UserId: ProfessionalInfo.UserId,
@@ -2110,7 +2215,7 @@ var FilimoScenario = (function (_super) {
             ProfessionalChoice: ProfessionalChoice,
             SelectedUserSide: SelectedUserSide,
             Kill: Kill,
-            DoctorLectureChoice: DoctorLectureChoice
+            DoctorLectureChoice: DoctorLectureChoice,
         });
         _b.ScoreBoardService.Professional(GameId, CorrectShot, KillMafia);
         return Kill;
@@ -2124,15 +2229,16 @@ var FilimoScenario = (function (_super) {
     FilimoScenario.ConcludeDetective = function (_a) {
         var GameId = _a.GameId, DetectiveChoice = _a.DetectiveChoice, JokerChoice = _a.JokerChoice;
         var Result = false;
-        var DetectiveChoiceRole = (_b.GetUserRoles(DetectiveChoice, GameId));
+        var DetectiveChoiceRole = _b.GetUserRole(DetectiveChoice, GameId);
         var CorrectInquiry = MafiaRoles.includes(DetectiveChoiceRole);
-        var JokerChoiceRole = (JokerChoice !== "") ? _b.GetUserRoles(JokerChoice, GameId) : "";
+        var JokerChoiceRole = JokerChoice !== "" ? _b.GetUserRole(JokerChoice, GameId) : "";
         console.log("[INFO]: Detective Selected ".concat(RolesName[DetectiveChoiceRole]));
         console.log("[INFO]: Joker Selected ".concat(RolesName[JokerChoiceRole]));
         if ([Roles.Mafia, Roles.DoctorLecture, Roles.Joker].includes(DetectiveChoiceRole)) {
             Result = true;
         }
-        if (DetectiveChoice === JokerChoice && JokerChoiceRole !== Roles.GodFather) {
+        if (DetectiveChoice === JokerChoice &&
+            JokerChoiceRole !== Roles.GodFather) {
             Result = !Result;
         }
         _b.ScoreBoardService.Detective(GameId, CorrectInquiry, CorrectInquiry && Result);
@@ -2144,21 +2250,24 @@ var FilimoScenario = (function (_super) {
             GameId: GameId,
             Event: Triggers.ExecutionAnimation,
             Message: {
-                Mode: (~~(Math.random() * 3) + 1)
-            }
+                Mode: ~~(Math.random() * 3) + 1,
+            },
         });
     };
     FilimoScenario.ExecutionAnimation = function (_a) {
         var GameId = _a.GameId;
         _b.GameConfigTools.Increase({ GameId: GameId, Path: "ExecutionAnimation" });
-        var countExecutionAnimation = _b.GameConfigTools.Get({ GameId: GameId, Path: "ExecutionAnimation" });
+        var countExecutionAnimation = _b.GameConfigTools.Get({
+            GameId: GameId,
+            Path: "ExecutionAnimation",
+        });
         if (countExecutionAnimation === 1) {
             var ExecutionAnimationNextStep = _b.GetPartyInfo({ GameId: GameId }).ExecutionAnimationNextStep;
             _b.UpdatePartyInfo({
                 _id: GameId,
                 newData: {
-                    ExecutionAnimationUserId: null
-                }
+                    ExecutionAnimationUserId: null,
+                },
             });
             if (ExecutionAnimationNextStep === GameStates.Day)
                 _b.StartDay({ GameId: GameId });
@@ -2168,13 +2277,15 @@ var FilimoScenario = (function (_super) {
     };
     FilimoScenario.StartNight = function (_a) {
         var GameId = _a.GameId;
-        var _c = _b.GetPartyInfo({ GameId: GameId }), NightCount = _c.NightCount, ExecutionAnimationUserId = _c.ExecutionAnimationUserId;
+        var _c = _b.GetPartyInfo({
+            GameId: GameId,
+        }), NightCount = _c.NightCount, ExecutionAnimationUserId = _c.ExecutionAnimationUserId;
         if (ExecutionAnimationUserId !== null) {
             _b.UpdatePartyInfo({
                 _id: GameId,
                 newData: {
-                    ExecutionAnimationNextStep: GameStates.Night
-                }
+                    ExecutionAnimationNextStep: GameStates.Night,
+                },
             });
             _b.StartExecutionAnimation({ GameId: GameId });
             return;
@@ -2195,7 +2306,7 @@ var FilimoScenario = (function (_super) {
                 Seller: Seller,
                 SituationRequest: SituationRequest,
                 Psychiatrist: Psychiatrist,
-                Alive: Alive.toString()
+                Alive: Alive.toString(),
             });
             _b.SendMessageToParty({
                 GameId: GameId,
@@ -2208,14 +2319,14 @@ var FilimoScenario = (function (_super) {
                     Seller: Seller,
                     SituationRequest: SituationRequest,
                     Psychiatrist: Psychiatrist,
-                    Alive: Alive.toString()
-                }
+                    Alive: Alive.toString(),
+                },
             });
             _b.UpdatePartyInfo({
                 _id: GameId,
                 newData: {
                     MafiaShotRight: ShotRight.UserId,
-                }
+                },
             });
         }
     };
@@ -2257,24 +2368,27 @@ var FilimoScenario = (function (_super) {
     };
     FilimoScenario.LastChanceCard = function (_a) {
         var GameId = _a.GameId, _c = _a.TargetId, TargetId = _c === void 0 ? "" : _c, _d = _a.UserRole, UserRole = _d === void 0 ? -1 : _d, SocketNode = _a.SocketNode;
-        var _e = _b.GetPartyInfo({ GameId: GameId }), LastChanceCardCode = _e.LastChanceCardCode, RightToChooseCard = _e.RightToChooseCard;
+        var _e = _b.GetPartyInfo({
+            GameId: GameId,
+        }), LastChanceCardCode = _e.LastChanceCardCode, RightToChooseCard = _e.RightToChooseCard;
         var IsCorrect = true;
         var hasAccess = _b.ioTools.GetQuery(SocketNode).userId === RightToChooseCard;
-        var isTargetNotEmpty = (TargetId !== "" || LastChanceCardCode === LastChance.Insomnia);
-        var CanUse = hasAccess &&
-            isTargetNotEmpty;
-        TargetId ? console.log("[INFO]LastChanceCard: ", {
-            hasAccess: hasAccess,
-            isTargetNotEmpty: isTargetNotEmpty,
-            isFinalShot: LastChanceCardCode === LastChance.FinalShot
-        }) : void 0;
+        var isTargetNotEmpty = TargetId !== "" || LastChanceCardCode === LastChance.Insomnia;
+        var CanUse = hasAccess && isTargetNotEmpty;
+        TargetId
+            ? console.log("[INFO]LastChanceCard: ", {
+                hasAccess: hasAccess,
+                isTargetNotEmpty: isTargetNotEmpty,
+                isFinalShot: LastChanceCardCode === LastChance.FinalShot,
+            })
+            : void 0;
         if (CanUse) {
             if (LastChanceCardCode === LastChance.RedCarpet) {
                 _b.UpdatePartyInfo({
                     _id: GameId,
                     newData: {
-                        RedCarpet: TargetId
-                    }
+                        RedCarpet: TargetId,
+                    },
                 });
             }
             else if (LastChanceCardCode === LastChance.FinalShot) {
@@ -2283,7 +2397,7 @@ var FilimoScenario = (function (_super) {
                     newData: {
                         MafiaChoice: TargetId,
                         MafiaShotIsDisable: true,
-                    }
+                    },
                 });
                 _b.StartNight({ GameId: GameId });
             }
@@ -2291,12 +2405,13 @@ var FilimoScenario = (function (_super) {
                 _b.UpdatePartyInfo({
                     _id: GameId,
                     newData: {
-                        GreenPath: TargetId
-                    }
+                        GreenPath: TargetId,
+                    },
                 });
             }
-            else if (LastChanceCardCode === LastChance.BeautifulMind && UserRole !== -1) {
-                var SelectedUserRole = _b.GetUserRoles(TargetId, GameId);
+            else if (LastChanceCardCode === LastChance.BeautifulMind &&
+                UserRole !== -1) {
+                var SelectedUserRole = _b.GetUserRole(TargetId, GameId);
                 IsCorrect = SelectedUserRole === UserRole;
                 if (!IsCorrect) {
                     _b.PushToKills({ GameId: GameId, Kill: TargetId });
@@ -2309,7 +2424,7 @@ var FilimoScenario = (function (_super) {
                 IsCorrect: IsCorrect,
                 LastChanceCardCode: LastChanceCardCode,
                 TargetId: TargetId,
-                UserRole: UserRole
+                UserRole: UserRole,
             });
             if ([LastChance.GreenPath, LastChance.RedCarpet].includes(LastChanceCardCode)) {
                 _b.SendMessageToParty({
@@ -2320,7 +2435,7 @@ var FilimoScenario = (function (_super) {
                         LastChanceCardCode: LastChanceCardCode,
                         TargetId: TargetId,
                         UserRole: UserRole,
-                    }
+                    },
                 });
             }
         }
@@ -2328,7 +2443,10 @@ var FilimoScenario = (function (_super) {
     FilimoScenario.LastChanceEnd = function (_a) {
         var GameId = _a.GameId, SocketNode = _a.SocketNode;
         _b.GameConfigTools.Increase({ GameId: GameId, Path: "LastChanceCard", Count: 1 });
-        var LastChanceCard = _b.GameConfigTools.Get({ GameId: GameId, Path: "LastChanceCard" });
+        var LastChanceCard = _b.GameConfigTools.Get({
+            GameId: GameId,
+            Path: "LastChanceCard",
+        });
         if (LastChanceCard === 1) {
             console.log("LastChanceEnd: ".concat(LastChanceCard));
             var LastChanceCardCode = _b.GetPartyInfo({ GameId: GameId }).LastChanceCardCode;
@@ -2342,7 +2460,7 @@ var FilimoScenario = (function (_super) {
             }
         }
     };
-    FilimoScenario.GetUserRoles = function (UserId, GameId) {
+    FilimoScenario.GetUserRole = function (UserId, GameId) {
         var UsersData = _b.GetPartyInfo({ GameId: GameId }).UsersData;
         var UserInfo = UsersData.find(function (user) {
             return user.UserId === UserId;
@@ -2355,18 +2473,25 @@ var FilimoScenario = (function (_super) {
     };
     FilimoScenario.ScoreBoardService = {
         CorrectVote: function (GameId, UserId) {
-            var UserRole = FilimoScenario.GetUserRoles(UserId, GameId);
-            FilimoScenario.PartiesInfo[GameId]["Scores"][UserId].Score += Scores[RolesName[UserRole]].CorrectVote;
+            var UserRole = FilimoScenario.GetUserRole(UserId, GameId);
+            FilimoScenario.PartiesInfo[GameId]["Scores"][UserId].Score +=
+                Scores[RolesName[UserRole]].CorrectVote;
             FilimoScenario.PartiesInfo[GameId]["Scores"][UserId].CorrectVote += 1;
+            console.log("[ScoreBoardService]: CorrectVote For User ".concat(UserId));
         },
         SetRoleAndSide: function (GameId, UserId, Role) {
             FilimoScenario.PartiesInfo[GameId]["Scores"][UserId].Role = Role;
-            FilimoScenario.PartiesInfo[GameId]["Scores"][UserId].Side = MafiaRoles.includes(Role) ? Sides.Mafia : Sides.Citizen;
+            FilimoScenario.PartiesInfo[GameId]["Scores"][UserId].Side =
+                MafiaRoles.includes(Role) ? Sides.Mafia : Sides.Citizen;
         },
         Shot: function (GameId) {
-            var _a = FilimoScenario.GetPartyInfo({ GameId: GameId }), UsersData = _a.UsersData, MafiaShotRight = _a.MafiaShotRight;
-            var MafiaSniperRole = FilimoScenario.GetUserRoles(MafiaShotRight, GameId);
-            var MafiaGroup = UsersData.filter(function (user) { return MafiaRoles.includes(user.UserRole); });
+            var _a = FilimoScenario.GetPartyInfo({
+                GameId: GameId,
+            }), UsersData = _a.UsersData, MafiaShotRight = _a.MafiaShotRight;
+            var MafiaSniperRole = FilimoScenario.GetUserRole(MafiaShotRight, GameId);
+            var MafiaGroup = UsersData.filter(function (user) {
+                return MafiaRoles.includes(user.UserRole);
+            });
             console.log("Score Board Shot Right: ".concat(MafiaShotRight));
             if (!MafiaShotRight) {
                 console.log("[INFO]: Mafia Shot is Disabled");
@@ -2374,33 +2499,62 @@ var FilimoScenario = (function (_super) {
             }
             for (var _i = 0, MafiaGroup_1 = MafiaGroup; _i < MafiaGroup_1.length; _i++) {
                 var mafia = MafiaGroup_1[_i];
-                FilimoScenario.PartiesInfo[GameId]["Scores"][mafia.UserId].Score += Scores.MafiaShot.MafiaShot;
+                console.log("[ScoreBoardService]: MafiaGroupShot For User ".concat(mafia.UserId));
+                FilimoScenario.PartiesInfo[GameId]["Scores"][mafia.UserId].Score +=
+                    Scores.MafiaShot.MafiaShot;
             }
-            FilimoScenario.PartiesInfo[GameId]["Scores"][MafiaShotRight].Score += Scores[RolesName[MafiaSniperRole]].MafiaShot;
+            FilimoScenario.PartiesInfo[GameId]["Scores"][MafiaShotRight].Score +=
+                Scores[RolesName[MafiaSniperRole]].MafiaShot;
+            console.log("[ScoreBoardService]: MafiaShot(MafiaShotRight) For User ".concat(MafiaShotRight));
         },
         DoctorLecture: function (GameId, isSuccess) {
-            var DoctorLecture = FilimoScenario.GetUserByRole({ GameId: GameId, Role: Roles.DoctorLecture });
-            var score = isSuccess ? Scores.DoctorLecture.UseAbility + Scores.DoctorLecture.CorrectAbility : Scores.DoctorLecture.UseAbility;
+            var DoctorLecture = FilimoScenario.GetUserByRole({
+                GameId: GameId,
+                Role: Roles.DoctorLecture,
+            });
+            var score = isSuccess
+                ? Scores.DoctorLecture.UseAbility + Scores.DoctorLecture.CorrectAbility
+                : Scores.DoctorLecture.UseAbility;
             FilimoScenario.PartiesInfo[GameId]["Scores"][DoctorLecture.UserId].Score += score;
-            if (isSuccess)
+            console.log("[ScoreBoardService]: DoctorLecture.UseAbility For User ".concat(DoctorLecture.UserId));
+            if (isSuccess) {
                 FilimoScenario.PartiesInfo[GameId]["Scores"][DoctorLecture.UserId].UseAbility += 1;
+                console.log("[ScoreBoardService]: DoctorLecture.CorrectAbility For User ".concat(DoctorLecture.UserId));
+            }
         },
         Joker: function (GameId, isSuccess) {
             var Joker = FilimoScenario.GetUserByRole({ GameId: GameId, Role: Roles.Joker });
-            var score = isSuccess ? Scores.Joker.UseAbility + Scores.Joker.CorrectAbility : Scores.Joker.UseAbility;
+            var score = isSuccess
+                ? Scores.Joker.UseAbility + Scores.Joker.CorrectAbility
+                : Scores.Joker.UseAbility;
+            console.log("[ScoreBoardService]: Joker.UseAbility For User ".concat(Joker.UserId));
             FilimoScenario.PartiesInfo[GameId]["Scores"][Joker.UserId].Score += score;
-            if (isSuccess)
+            if (isSuccess) {
                 FilimoScenario.PartiesInfo[GameId]["Scores"][Joker.UserId].UseAbility += 1;
+                console.log("[ScoreBoardService]: Joker.CorrectAbility For User ".concat(Joker.UserId));
+            }
         },
         Doctor: function (GameId, isSuccess) {
-            var Doctor = FilimoScenario.GetUserByRole({ GameId: GameId, Role: Roles.Doctor });
-            var score = isSuccess ? Scores.Doctor.UseAbility + Scores.Doctor.CorrectAbility : Scores.Doctor.UseAbility;
-            FilimoScenario.PartiesInfo[GameId]["Scores"][Doctor.UserId].Score += score;
-            if (isSuccess)
+            var Doctor = FilimoScenario.GetUserByRole({
+                GameId: GameId,
+                Role: Roles.Doctor,
+            });
+            var score = isSuccess
+                ? Scores.Doctor.UseAbility + Scores.Doctor.CorrectAbility
+                : Scores.Doctor.UseAbility;
+            console.log("[ScoreBoardService]: Doctor.UseAbility For User ".concat(Doctor.UserId));
+            FilimoScenario.PartiesInfo[GameId]["Scores"][Doctor.UserId].Score +=
+                score;
+            if (isSuccess) {
                 FilimoScenario.PartiesInfo[GameId]["Scores"][Doctor.UserId].UseAbility += 1;
+                console.log("[ScoreBoardService]: Doctor.CorrectAbility For User ".concat(Doctor.UserId));
+            }
         },
         Professional: function (GameId, CorrectShot, KillMafia) {
-            var Professional = FilimoScenario.GetUserByRole({ GameId: GameId, Role: Roles.Professional });
+            var Professional = FilimoScenario.GetUserByRole({
+                GameId: GameId,
+                Role: Roles.Professional,
+            });
             console.log("ScoreBoard Professional: ", {
                 GameId: GameId,
                 CorrectShot: CorrectShot,
@@ -2408,49 +2562,85 @@ var FilimoScenario = (function (_super) {
                 Professional: Professional,
             });
             var score = Scores.Professional.UseAbility;
-            if (CorrectShot)
+            console.log("[ScoreBoardService]: Professional.UseAbility For User ".concat(Professional.UserId));
+            if (CorrectShot) {
                 score += Scores.Professional.CorrectShot;
-            if (KillMafia)
+                console.log("[ScoreBoardService]: Professional.CorrectShot For User ".concat(Professional.UserId));
+            }
+            if (KillMafia) {
                 score += Scores.Professional.KillMafia;
-            FilimoScenario.PartiesInfo[GameId]["Scores"][Professional.UserId].Score += score;
+                console.log("[ScoreBoardService]: Professional.KillMafia For User ".concat(Professional.UserId));
+            }
+            FilimoScenario.PartiesInfo[GameId]["Scores"][Professional.UserId].Score +=
+                score;
             if (CorrectShot)
                 FilimoScenario.PartiesInfo[GameId]["Scores"][Professional.UserId].UseAbility += 1;
         },
         Detective: function (GameId, CorrectInquiry, PositiveInquiry) {
-            var Detective = FilimoScenario.GetUserByRole({ GameId: GameId, Role: Roles.Detective });
+            var Detective = FilimoScenario.GetUserByRole({
+                GameId: GameId,
+                Role: Roles.Detective,
+            });
             var score = Scores.Detective.UseAbility;
-            if (CorrectInquiry)
+            console.log("[ScoreBoardService]: Detective.UseAbility For User ".concat(Detective.UserId));
+            if (CorrectInquiry) {
+                console.log("[ScoreBoardService]: Detective.CorrectInquiry For User ".concat(Detective.UserId));
                 score += Scores.Detective.CorrectInquiry;
-            if (PositiveInquiry)
+            }
+            if (PositiveInquiry) {
+                console.log("[ScoreBoardService]: Detective.PositiveInquiry For User ".concat(Detective.UserId));
                 score += Scores.Detective.PositiveInquiry;
-            FilimoScenario.PartiesInfo[GameId]["Scores"][Detective.UserId].Score += score;
+            }
+            FilimoScenario.PartiesInfo[GameId]["Scores"][Detective.UserId].Score +=
+                score;
             if (CorrectInquiry)
                 FilimoScenario.PartiesInfo[GameId]["Scores"][Detective.UserId].UseAbility += 1;
         },
         Psychiatrist: function (GameId, isMafia) {
-            var Psychiatrist = FilimoScenario.GetUserByRole({ GameId: GameId, Role: Roles.Psychiatrist });
+            var Psychiatrist = FilimoScenario.GetUserByRole({
+                GameId: GameId,
+                Role: Roles.Psychiatrist,
+            });
             var score = Scores.Psychiatrist.UseAbility;
-            if (isMafia)
+            console.log("[ScoreBoardService]: Psychiatrist.UseAbility For User ".concat(Psychiatrist.UserId));
+            if (isMafia) {
                 score += Scores.Psychiatrist.MafiaBonus;
-            FilimoScenario.PartiesInfo[GameId]["Scores"][Psychiatrist.UserId].Score += score;
+                console.log("[ScoreBoardService]: Psychiatrist.MafiaBonus For User ".concat(Psychiatrist.UserId));
+            }
+            FilimoScenario.PartiesInfo[GameId]["Scores"][Psychiatrist.UserId].Score +=
+                score;
             if (isMafia)
                 FilimoScenario.PartiesInfo[GameId]["Scores"][Psychiatrist.UserId].UseAbility += 1;
         },
-        Seller: function (GameId, SelectedUserRole) {
-            var Seller = FilimoScenario.GetUserByRole({ GameId: GameId, Role: Roles.Seller });
+        Seller: function (GameId, SelectedUserId) {
+            var SelectedUserRole = FilimoScenario.GetUserRole(SelectedUserId, GameId);
+            var Seller = FilimoScenario.GetUserByRole({
+                GameId: GameId,
+                Role: Roles.Seller,
+            });
             var score = Scores.Seller.UseAbility;
+            console.log("[ScoreBoardService]: Seller.UseAbility For User ".concat(Seller.UserId));
             score += Scores.Seller[RolesName[SelectedUserRole]] || 0;
-            FilimoScenario.PartiesInfo[GameId]["Scores"][Seller.UserId].Score += score;
+            FilimoScenario.PartiesInfo[GameId]["Scores"][Seller.UserId].Score +=
+                score;
             if (score > Scores.Seller.UseAbility) {
+                console.log("[ScoreBoardService]: Seller.CorrectAbility(".concat(RolesName[SelectedUserRole], ") For User ").concat(Seller.UserId));
                 FilimoScenario.PartiesInfo[GameId]["Scores"][Seller.UserId].UseAbility += 1;
             }
         },
         Immortal: function (GameId, isUseful) {
-            var Immortal = FilimoScenario.GetUserByRole({ GameId: GameId, Role: Roles.Immortal });
+            var Immortal = FilimoScenario.GetUserByRole({
+                GameId: GameId,
+                Role: Roles.Immortal,
+            });
             var score = Scores.Immortal.UseAbility;
-            if (isUseful)
+            console.log("[ScoreBoardService]: Immortal.UseAbility For User ".concat(Immortal.UserId));
+            if (isUseful) {
+                console.log("[ScoreBoardService]: Immortal.CorrectAbility For User ".concat(Immortal.UserId));
                 score += Scores.Immortal.CorrectAbility;
-            FilimoScenario.PartiesInfo[GameId]["Scores"][Immortal.UserId].Score += score;
+            }
+            FilimoScenario.PartiesInfo[GameId]["Scores"][Immortal.UserId].Score +=
+                score;
             if (isUseful)
                 FilimoScenario.PartiesInfo[GameId]["Scores"][Immortal.UserId].UseAbility += 1;
         },
@@ -2459,10 +2649,16 @@ var FilimoScenario = (function (_super) {
             if (CancelSecondVote === void 0) { CancelSecondVote = false; }
             var Mayor = FilimoScenario.GetUserByRole({ GameId: GameId, Role: Roles.Mayor });
             var score = Scores.Mayor.UseAbility;
-            if (Execute)
+            console.log("[ScoreBoardService]: Mayor Data Execute: ".concat(Execute, " CancelSecondVote: ").concat(CancelSecondVote));
+            console.log("[ScoreBoardService]: Mayor.UseAbility For User ".concat(Mayor.UserId));
+            if (Execute) {
+                console.log("[ScoreBoardService]: Mayor.Execute For User ".concat(Mayor.UserId));
                 score += Scores.Mayor.Execute;
-            if (CancelSecondVote)
+            }
+            if (CancelSecondVote) {
+                console.log("[ScoreBoardService]: Mayor.CancelSecondVote For User ".concat(Mayor.UserId));
                 score += Scores.Mayor.CancelSecondVote;
+            }
             FilimoScenario.PartiesInfo[GameId]["Scores"][Mayor.UserId].Score += score;
             if (Execute || CancelSecondVote)
                 FilimoScenario.PartiesInfo[GameId]["Scores"][Mayor.UserId].UseAbility += 1;
@@ -2492,6 +2688,7 @@ var FilimoScenario = (function (_super) {
         },
         CalculateScoreBoard: function (GameId) {
             var ScoreBoard = Object.values(FilimoScenario.PartiesInfo[GameId]["Scores"]);
+            fs.writeFileSync("./ScoreBoard.json", JSON.stringify(ScoreBoard));
             var _a = FilimoScenario.PartiesInfo[GameId], Win = _a.Win, Quit = _a.Quit;
             var Winners = ScoreBoard.filter(function (user) {
                 return user.Side === Win;
@@ -2501,13 +2698,11 @@ var FilimoScenario = (function (_super) {
             ScoreBoard.sort(function (a, b) { return b.Score - a.Score; });
             var i = 0;
             var rank = 2;
-            while (true) {
+            while (i >= ScoreBoard.length) {
                 if (ScoreBoard[i].UserId !== Winners[0].UserId) {
                     ScoreBoard[i].MvpRank = rank;
                     rank++;
                 }
-                if (i > ScoreBoard.length)
-                    break;
                 i++;
             }
             var fakeScores = [30, 35, 40, 45];
@@ -2515,11 +2710,11 @@ var FilimoScenario = (function (_super) {
                 if (user.Score <= 30) {
                     user.Score = fakeScores[~~(Math.random() * fakeScores.length)];
                 }
-                user.Score = !Quit.includes(user.UserId) ? Classic(Win, user.Score) : 0;
+                user.Score = !Quit.includes(user.UserId) ? Filimo(Win, user.Score) : 0;
                 return user;
             });
             FilimoScenario.PartiesInfo[GameId]["ScoreBoard"] = ScoreBoard;
-            fs.writeFileSync("./ScoreBoard-".concat(Date.now(), ".json"), JSON.stringify(FilimoScenario.PartiesInfo[GameId]));
+            fs.writeFileSync("ScoreBoard-".concat(Date.now(), ".json"), JSON.stringify(FilimoScenario.PartiesInfo[GameId]));
         },
     };
     FilimoScenario.GetUserById = function (UserId, GameId) {
@@ -2529,15 +2724,31 @@ var FilimoScenario = (function (_super) {
         });
         if (UserInfo === undefined) {
             console.trace("can't find the user: ", UsersData);
-            return { UserName: "", Character: "", UserId: "", UserRole: 0, Index: 0, Vip: false };
+            return {
+                UserName: "",
+                Character: "",
+                UserId: "",
+                UserRole: 0,
+                Index: 0,
+                Vip: false,
+            };
         }
         return UserInfo;
     };
     FilimoScenario.GetUserSide = function (UserId, GameId) {
-        var UserRole = _b.GetUserRoles(UserId, GameId);
+        var UserRole = _b.GetUserRole(UserId, GameId);
         if (MafiaRoles.includes(UserRole))
             return Sides.Mafia;
-        else if ([Roles.Detective, Roles.Doctor, Roles.Professional, Roles.Seller, Roles.Immortal, Roles.Mayor, Roles.Psychiatrist, Roles.Citizen])
+        else if ([
+            Roles.Detective,
+            Roles.Doctor,
+            Roles.Professional,
+            Roles.Seller,
+            Roles.Immortal,
+            Roles.Mayor,
+            Roles.Psychiatrist,
+            Roles.Citizen,
+        ])
             return Sides.Citizen;
         else {
             console.trace("Can't Read the Side: ", UserRole);
@@ -2552,19 +2763,23 @@ var FilimoScenario = (function (_super) {
                 switch (_e.label) {
                     case 0:
                         _e.trys.push([0, 12, , 13]);
-                        return [4, UserManager
-                                .GetUserById(SocketNode.handshake.query.userId)];
+                        return [4, UserManager.GetUserById(SocketNode.handshake.query.userId)];
                     case 1:
                         UserData = (_e.sent()).Payload;
-                        if (!((UserData === null || UserData === void 0 ? void 0 : UserData.GameId) && this.PartiesInfo[UserData.GameId.toString()] !== undefined)) return [3, 11];
-                        Alive = this.GetPartyInfo({ GameId: UserData.GameId.toString() }).Alive;
+                        if (!((UserData === null || UserData === void 0 ? void 0 : UserData.GameId) &&
+                            this.PartiesInfo[UserData.GameId.toString()] !== undefined)) return [3, 11];
+                        Alive = this.GetPartyInfo({
+                            GameId: UserData.GameId.toString(),
+                        }).Alive;
                         if (!Alive.includes(SocketNode.handshake.query.userId)) return [3, 10];
                         this.PushItemToPartyInfo({
                             _id: UserData.GameId.toString(),
                             Item: UserData._id.toString(),
                             Path: "DisconnectedUsers",
                         });
-                        _c = this.GetPartyInfo({ GameId: UserData.GameId }), CurrentTurnUser = _c.CurrentTurnUser, GameState = _c.GameState;
+                        _c = this.GetPartyInfo({
+                            GameId: UserData.GameId,
+                        }), CurrentTurnUser = _c.CurrentTurnUser, GameState = _c.GameState;
                         return [4, this.SetOfflineTime(UserData._id.toString(), UserData.GameId.toString())];
                     case 2:
                         _e.sent();
@@ -2578,12 +2793,15 @@ var FilimoScenario = (function (_super) {
                         this.PassTurn({
                             GameId: UserData.GameId.toString(),
                             SocketNode: SocketNode,
-                            IsStarted: false
+                            IsStarted: false,
                         });
                         return [3, 5];
                     case 3:
                         if (!(GameState === GameStates.CourtSpeak)) return [3, 5];
-                        return [4, this.PassCourtSpeak({ SocketNode: SocketNode, GameId: UserData.GameId.toString() })];
+                        return [4, this.PassCourtSpeak({
+                                SocketNode: SocketNode,
+                                GameId: UserData.GameId.toString(),
+                            })];
                     case 4:
                         _e.sent();
                         _e.label = 5;
@@ -2593,7 +2811,10 @@ var FilimoScenario = (function (_super) {
                         if (!(RightToChooseCard === UserData._id.toString())) return [3, 9];
                         if (!(LastChanceCardCode === LastChance.Insomnia)) return [3, 7];
                         console.log("StartDay From Insomnia (Disconnect)");
-                        return [4, this.StartDay({ GameId: UserData.GameId.toString(), SocketNode: SocketNode })];
+                        return [4, this.StartDay({
+                                GameId: UserData.GameId.toString(),
+                                SocketNode: SocketNode,
+                            })];
                     case 6:
                         _e.sent();
                         return [3, 9];
@@ -2609,8 +2830,8 @@ var FilimoScenario = (function (_super) {
                             GameId: UserData.GameId.toString(),
                             Message: {
                                 UserId: SocketNode.handshake.query.userId,
-                                Opinion: Opinions.Disconnect
-                            }
+                                Opinion: Opinions.Disconnect,
+                            },
                         });
                         _e.label = 10;
                     case 10: return [2, true];
@@ -2630,13 +2851,14 @@ var FilimoScenario = (function (_super) {
             var UserData, GameId, _c, DisconnectedUsers, Alive, Scenario;
             return __generator(_b, function (_d) {
                 switch (_d.label) {
-                    case 0: return [4, UserManager
-                            .GetUserById(SocketNode.handshake.query.userId)];
+                    case 0: return [4, UserManager.GetUserById(SocketNode.handshake.query.userId)];
                     case 1:
                         UserData = (_d.sent()).Payload;
                         GameId = UserData.GameId.toString();
                         if (!(UserData.GameId && this.PartiesInfo[GameId] !== undefined)) return [3, 3];
-                        _c = this.GetPartyInfo({ GameId: GameId }), DisconnectedUsers = _c.DisconnectedUsers, Alive = _c.Alive, Scenario = _c.Scenario;
+                        _c = this.GetPartyInfo({
+                            GameId: GameId,
+                        }), DisconnectedUsers = _c.DisconnectedUsers, Alive = _c.Alive, Scenario = _c.Scenario;
                         if (!Alive.includes(SocketNode.handshake.query.userId)) return [3, 3];
                         SocketNode.join(this.RoomsTools.party(GameId));
                         return [4, this.SetOnlineTime(SocketNode.handshake.query.userId, GameId)];
@@ -2647,15 +2869,15 @@ var FilimoScenario = (function (_super) {
                         });
                         this.UpdatePartyInfo({
                             _id: GameId,
-                            newData: { DisconnectedUsers: __spreadArray([], new Set(DisconnectedUsers), true) }
+                            newData: { DisconnectedUsers: __spreadArray([], new Set(DisconnectedUsers), true) },
                         });
                         this.SendMessageToParty({
                             Triggers: Triggers.Opinion,
                             GameId: GameId,
                             Message: {
                                 UserId: SocketNode.handshake.query.userId,
-                                Opinion: Opinions.Connect
-                            }
+                                Opinion: Opinions.Connect,
+                            },
                         });
                         this.SendMessageToUser({
                             Triggers: "Rejoin",
@@ -2663,8 +2885,8 @@ var FilimoScenario = (function (_super) {
                             GameId: GameId,
                             Message: {
                                 Scenario: Scenario,
-                                GameId: GameId
-                            }
+                                GameId: GameId,
+                            },
                         });
                         _d.label = 3;
                     case 3: return [2];

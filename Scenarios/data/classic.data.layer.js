@@ -71,7 +71,7 @@ var socket_abs_1 = __importDefault(require("../../Core/interface/socket.abs"));
 var IInitParty = {
     _id: String(),
     Members: Array(),
-    GameMode: Number()
+    GameMode: Number(),
 };
 var IPassCourtSpeak = {
     GameId: String(),
@@ -89,7 +89,7 @@ var IUserOpinion = {
     GameId: String(),
 };
 var IChallengeRequest = {
-    GameId: String()
+    GameId: String(),
 };
 var IAcceptChallenge = {
     GameId: String(),
@@ -192,7 +192,7 @@ var Classic = (function (_super) {
             });
         });
     };
-    Classic.PassTurn = function (input, SocketNode) {
+    Classic.BypassGame = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
             var data, e_4;
             return __generator(this, function (_a) {
@@ -200,9 +200,8 @@ var Classic = (function (_super) {
                     case 0:
                         _a.trys.push([0, 4, , 5]);
                         data = __assign(__assign({}, input), { SocketNode: SocketNode });
-                        console.log("[PassTurn]: ".concat(input.UserId));
                         if (!(0, interface_1.CheckValidation)(IEnvSetting, data)) return [3, 2];
-                        return [4, classic_scenario_1.default.PassTurn(data)];
+                        return [4, classic_scenario_1.default.BypassGame(data)];
                     case 1:
                         _a.sent();
                         return [2, true];
@@ -219,7 +218,7 @@ var Classic = (function (_super) {
             });
         });
     };
-    Classic.Quit = function (input, SocketNode) {
+    Classic.PassTurn = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
             var data, e_5;
             return __generator(this, function (_a) {
@@ -227,8 +226,9 @@ var Classic = (function (_super) {
                     case 0:
                         _a.trys.push([0, 4, , 5]);
                         data = __assign(__assign({}, input), { SocketNode: SocketNode });
+                        console.log("[PassTurn]: ".concat(input.UserId));
                         if (!(0, interface_1.CheckValidation)(IEnvSetting, data)) return [3, 2];
-                        return [4, classic_scenario_1.default.Quit(data)];
+                        return [4, classic_scenario_1.default.PassTurn(data)];
                     case 1:
                         _a.sent();
                         return [2, true];
@@ -238,14 +238,14 @@ var Classic = (function (_super) {
                     case 3: return [3, 5];
                     case 4:
                         e_5 = _a.sent();
-                        console.log(e_5);
+                        console.trace(e_5);
                         return [2, false];
                     case 5: return [2];
                 }
             });
         });
     };
-    Classic.ExecutionAnimation = function (input, SocketNode) {
+    Classic.Quit = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
             var data, e_6;
             return __generator(this, function (_a) {
@@ -254,7 +254,7 @@ var Classic = (function (_super) {
                         _a.trys.push([0, 4, , 5]);
                         data = __assign(__assign({}, input), { SocketNode: SocketNode });
                         if (!(0, interface_1.CheckValidation)(IEnvSetting, data)) return [3, 2];
-                        return [4, classic_scenario_1.default.ExecutionAnimation(data)];
+                        return [4, classic_scenario_1.default.Quit(data)];
                     case 1:
                         _a.sent();
                         return [2, true];
@@ -271,9 +271,35 @@ var Classic = (function (_super) {
             });
         });
     };
-    Classic.Users = function (input, SocketNode) {
+    Classic.ExecutionAnimation = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
             var data, e_7;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 4, , 5]);
+                        data = __assign(__assign({}, input), { SocketNode: SocketNode });
+                        if (!(0, interface_1.CheckValidation)(IEnvSetting, data)) return [3, 2];
+                        return [4, classic_scenario_1.default.ExecutionAnimation(data)];
+                    case 1:
+                        _a.sent();
+                        return [2, true];
+                    case 2:
+                        console.trace("Schema Error");
+                        return [2, false];
+                    case 3: return [3, 5];
+                    case 4:
+                        e_7 = _a.sent();
+                        console.log(e_7);
+                        return [2, false];
+                    case 5: return [2];
+                }
+            });
+        });
+    };
+    Classic.Users = function (input, SocketNode) {
+        return __awaiter(this, void 0, void 0, function () {
+            var data, e_8;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -290,8 +316,8 @@ var Classic = (function (_super) {
                         return [2, false];
                     case 3: return [3, 5];
                     case 4:
-                        e_7 = _a.sent();
-                        console.trace(e_7);
+                        e_8 = _a.sent();
+                        console.trace(e_8);
                         return [2, false];
                     case 5: return [2];
                 }
@@ -300,7 +326,7 @@ var Classic = (function (_super) {
     };
     Classic.ConcludeSituationRequest = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
-            var data, e_8;
+            var data, e_9;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -317,8 +343,8 @@ var Classic = (function (_super) {
                         return [2, false];
                     case 3: return [3, 5];
                     case 4:
-                        e_8 = _a.sent();
-                        console.trace(e_8);
+                        e_9 = _a.sent();
+                        console.trace(e_9);
                         return [2, false];
                     case 5: return [2];
                 }
@@ -327,7 +353,7 @@ var Classic = (function (_super) {
     };
     Classic.Willing = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
-            var data, e_9;
+            var data, e_10;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -344,32 +370,6 @@ var Classic = (function (_super) {
                         return [2, false];
                     case 3: return [3, 5];
                     case 4:
-                        e_9 = _a.sent();
-                        console.trace(e_9);
-                        return [2, false];
-                    case 5: return [2];
-                }
-            });
-        });
-    };
-    Classic.SituationRequest = function (input, SocketNode) {
-        return __awaiter(this, void 0, void 0, function () {
-            var data, e_10;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 4, , 5]);
-                        data = __assign(__assign({}, input), { SocketNode: SocketNode });
-                        if (!(0, interface_1.CheckValidation)(ISituationRequest, data)) return [3, 2];
-                        return [4, classic_scenario_1.default.SituationRequest(data)];
-                    case 1:
-                        _a.sent();
-                        return [2, true];
-                    case 2:
-                        console.trace("Schema Error");
-                        return [2, false];
-                    case 3: return [3, 5];
-                    case 4:
                         e_10 = _a.sent();
                         console.trace(e_10);
                         return [2, false];
@@ -378,7 +378,7 @@ var Classic = (function (_super) {
             });
         });
     };
-    Classic.UserOpinion = function (input, SocketNode) {
+    Classic.SituationRequest = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
             var data, e_11;
             return __generator(this, function (_a) {
@@ -386,8 +386,9 @@ var Classic = (function (_super) {
                     case 0:
                         _a.trys.push([0, 4, , 5]);
                         data = __assign(__assign({}, input), { SocketNode: SocketNode });
-                        if (!(0, interface_1.CheckValidation)(IUserOpinion, data)) return [3, 2];
-                        return [4, classic_scenario_1.default.UserOpinion(data)];
+                        if (!(0, interface_1.CheckValidation)(ISituationRequest, data)) return [3, 2];
+                        console.log("SituationRequest Recived: ", data.Vote);
+                        return [4, classic_scenario_1.default.SituationRequest(data)];
                     case 1:
                         _a.sent();
                         return [2, true];
@@ -404,7 +405,7 @@ var Classic = (function (_super) {
             });
         });
     };
-    Classic.ChallengeRequest = function (input, SocketNode) {
+    Classic.UserOpinion = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
             var data, e_12;
             return __generator(this, function (_a) {
@@ -412,8 +413,8 @@ var Classic = (function (_super) {
                     case 0:
                         _a.trys.push([0, 4, , 5]);
                         data = __assign(__assign({}, input), { SocketNode: SocketNode });
-                        if (!(0, interface_1.CheckValidation)(IChallengeRequest, data)) return [3, 2];
-                        return [4, classic_scenario_1.default.ChallengeRequest(data)];
+                        if (!(0, interface_1.CheckValidation)(IUserOpinion, data)) return [3, 2];
+                        return [4, classic_scenario_1.default.UserOpinion(data)];
                     case 1:
                         _a.sent();
                         return [2, true];
@@ -430,7 +431,7 @@ var Classic = (function (_super) {
             });
         });
     };
-    Classic.AcceptChallenge = function (input, SocketNode) {
+    Classic.ChallengeRequest = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
             var data, e_13;
             return __generator(this, function (_a) {
@@ -438,8 +439,8 @@ var Classic = (function (_super) {
                     case 0:
                         _a.trys.push([0, 4, , 5]);
                         data = __assign(__assign({}, input), { SocketNode: SocketNode });
-                        if (!(0, interface_1.CheckValidation)(IAcceptChallenge, data)) return [3, 2];
-                        return [4, classic_scenario_1.default.AcceptChallenge(data)];
+                        if (!(0, interface_1.CheckValidation)(IChallengeRequest, data)) return [3, 2];
+                        return [4, classic_scenario_1.default.ChallengeRequest(data)];
                     case 1:
                         _a.sent();
                         return [2, true];
@@ -456,7 +457,7 @@ var Classic = (function (_super) {
             });
         });
     };
-    Classic.UseAbility = function (input, SocketNode) {
+    Classic.AcceptChallenge = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
             var data, e_14;
             return __generator(this, function (_a) {
@@ -464,8 +465,8 @@ var Classic = (function (_super) {
                     case 0:
                         _a.trys.push([0, 4, , 5]);
                         data = __assign(__assign({}, input), { SocketNode: SocketNode });
-                        if (!(0, interface_1.CheckValidation)(IUseAbility, data)) return [3, 2];
-                        return [4, classic_scenario_1.default.UseAbility(data)];
+                        if (!(0, interface_1.CheckValidation)(IAcceptChallenge, data)) return [3, 2];
+                        return [4, classic_scenario_1.default.AcceptChallenge(data)];
                     case 1:
                         _a.sent();
                         return [2, true];
@@ -482,17 +483,16 @@ var Classic = (function (_super) {
             });
         });
     };
-    Classic.Vote = function (input, SocketNode) {
+    Classic.UseAbility = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
-            var data, isValid, e_15;
+            var data, e_15;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 4, , 5]);
                         data = __assign(__assign({}, input), { SocketNode: SocketNode });
-                        isValid = (0, interface_1.CheckValidation)(IVote, data);
-                        if (!isValid) return [3, 2];
-                        return [4, classic_scenario_1.default.Vote(data)];
+                        if (!(0, interface_1.CheckValidation)(IUseAbility, data)) return [3, 2];
+                        return [4, classic_scenario_1.default.UseAbility(data)];
                     case 1:
                         _a.sent();
                         return [2, true];
@@ -509,7 +509,7 @@ var Classic = (function (_super) {
             });
         });
     };
-    Classic.PassCourtSpeak = function (input, SocketNode) {
+    Classic.Vote = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
             var data, isValid, e_16;
             return __generator(this, function (_a) {
@@ -517,9 +517,9 @@ var Classic = (function (_super) {
                     case 0:
                         _a.trys.push([0, 4, , 5]);
                         data = __assign(__assign({}, input), { SocketNode: SocketNode });
-                        isValid = (0, interface_1.CheckValidation)(IPassCourtSpeak, data);
+                        isValid = (0, interface_1.CheckValidation)(IVote, data);
                         if (!isValid) return [3, 2];
-                        return [4, classic_scenario_1.default.PassCourtSpeak(data)];
+                        return [4, classic_scenario_1.default.Vote(data)];
                     case 1:
                         _a.sent();
                         return [2, true];
@@ -536,13 +536,38 @@ var Classic = (function (_super) {
             });
         });
     };
-    Classic.Count = function () {
+    Classic.PassCourtSpeak = function (input, SocketNode) {
+        return __awaiter(this, void 0, void 0, function () {
+            var data, isValid, e_17;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 4, , 5]);
+                        data = __assign(__assign({}, input), { SocketNode: SocketNode });
+                        isValid = (0, interface_1.CheckValidation)(IPassCourtSpeak, data);
+                        if (!isValid) return [3, 2];
+                        return [4, classic_scenario_1.default.PassCourtSpeak(data)];
+                    case 1:
+                        _a.sent();
+                        return [2, true];
+                    case 2:
+                        console.trace("Schema Error");
+                        return [2, false];
+                    case 3: return [3, 5];
+                    case 4:
+                        e_17 = _a.sent();
+                        console.trace(e_17);
+                        return [2, false];
+                    case 5: return [2];
+                }
+            });
+        });
     };
-    Classic.VoteList = function () {
-    };
+    Classic.Count = function () { };
+    Classic.VoteList = function () { };
     Classic.ConcludeTheNight = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
-            var data, e_17;
+            var data, e_18;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -558,8 +583,8 @@ var Classic = (function (_super) {
                         return [2, false];
                     case 3: return [3, 5];
                     case 4:
-                        e_17 = _a.sent();
-                        console.trace(e_17);
+                        e_18 = _a.sent();
+                        console.trace(e_18);
                         return [3, 5];
                     case 5: return [2];
                 }
@@ -568,7 +593,7 @@ var Classic = (function (_super) {
     };
     Classic.StartSpeak = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
-            var data, e_18;
+            var data, e_19;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -586,8 +611,8 @@ var Classic = (function (_super) {
                         return [2, false];
                     case 3: return [3, 5];
                     case 4:
-                        e_18 = _a.sent();
-                        console.log(e_18);
+                        e_19 = _a.sent();
+                        console.log(e_19);
                         return [2, false];
                     case 5: return [2];
                 }
@@ -596,7 +621,7 @@ var Classic = (function (_super) {
     };
     Classic._disconnect = function (SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
-            var e_19;
+            var e_20;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -607,8 +632,8 @@ var Classic = (function (_super) {
                         _a.sent();
                         return [2, true];
                     case 2:
-                        e_19 = _a.sent();
-                        console.trace(e_19);
+                        e_20 = _a.sent();
+                        console.trace(e_20);
                         return [3, 3];
                     case 3: return [2];
                 }
@@ -617,7 +642,7 @@ var Classic = (function (_super) {
     };
     Classic._connect = function (SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
-            var e_20;
+            var e_21;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -628,8 +653,8 @@ var Classic = (function (_super) {
                         _a.sent();
                         return [2, true];
                     case 2:
-                        e_20 = _a.sent();
-                        console.trace(e_20);
+                        e_21 = _a.sent();
+                        console.trace(e_21);
                         return [3, 3];
                     case 3: return [2];
                 }

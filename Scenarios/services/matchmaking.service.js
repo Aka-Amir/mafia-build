@@ -72,10 +72,8 @@ var FindAll = function (sorted, tempGp, PartyLimit) {
     }
     return null;
 };
-var MatchMakingRequest = function (Database, Input, PartyLimit, MatchedGroupsId, State, Gender, Mode, Scenario) {
+var MatchMakingRequest = function (Database, Input, PartyLimit, MatchedGroupsId, Mode, Scenario) {
     if (MatchedGroupsId === void 0) { MatchedGroupsId = [Input._id]; }
-    if (State === void 0) { State = Input.State; }
-    if (Gender === void 0) { Gender = Input.Gender; }
     if (Mode === void 0) { Mode = Input.Mode; }
     if (Scenario === void 0) { Scenario = Input.Scenario; }
     return __awaiter(void 0, void 0, void 0, function () {

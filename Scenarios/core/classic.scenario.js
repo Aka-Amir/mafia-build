@@ -92,6 +92,7 @@ var Triggers = {
     Willing: base + "Willing",
     ConcludeTheNight: base + "ConcludeTheNight",
     Opinion: base + "UserOpinion",
+    ScoreBoard: base + "ScoreBoard",
     ChallengeRequest: base + "ChallengeRequest",
     AcceptChallenge: base + "AcceptChallenge",
     Vote: base + "Vote",
@@ -110,8 +111,7 @@ var ClassicScenario = (function (_super) {
         return _super !== null && _super.apply(this, arguments) || this;
     }
     ClassicScenario.JoinToRoom = function (data, socket, cb) {
-        if (cb === void 0) { cb = function () {
-        }; }
+        if (cb === void 0) { cb = function () { }; }
         return __awaiter(this, void 0, void 0, function () {
             var roomName;
             return __generator(this, function (_a) {
@@ -120,7 +120,8 @@ var ClassicScenario = (function (_super) {
                     socket.join(roomName);
                 }
                 console.log("[".concat(Date.now(), "]: ").concat(this.io.sockets.adapter.rooms[this.RoomsTools.party(data.GameId)].length));
-                if (this.io.sockets.adapter.rooms[this.RoomsTools.party(data.GameId)].length === 10)
+                if (this.io.sockets.adapter.rooms[this.RoomsTools.party(data.GameId)]
+                    .length === 10)
                     cb();
                 return [2, true];
             });
@@ -140,9 +141,6 @@ var ClassicScenario = (function (_super) {
             });
         });
     };
-    ClassicScenario.isSituationRequestUseful = function (ImmortalChoice, SituationRequest, isSniperShot, UsefulSituationRequest) {
-        return isSniperShot || UsefulSituationRequest;
-    };
     var _b;
     _b = ClassicScenario;
     ClassicScenario.GameConfigs = {};
@@ -150,7 +148,7 @@ var ClassicScenario = (function (_super) {
     ClassicScenario.GameConfigTools = {
         Increase: function (_a) {
             var GameId = _a.GameId, Path = _a.Path, _c = _a.Count, Count = _c === void 0 ? 1 : _c;
-            return ClassicScenario.GameConfigs[GameId][Path] += Count;
+            return (ClassicScenario.GameConfigs[GameId][Path] += Count);
         },
         Get: function (_a) {
             var GameId = _a.GameId, Path = _a.Path;
@@ -186,7 +184,10 @@ var ClassicScenario = (function (_super) {
         GetClients: function () {
             var _this = this;
             return new Promise(function (resolve, reject) {
-                _this.io.of(NameSpace).in(Room).clients(function (error, socketIds) {
+                _this.io
+                    .of(NameSpace)
+                    .in(Room)
+                    .clients(function (error, socketIds) {
                     if (error)
                         reject(error);
                     else
@@ -201,15 +202,20 @@ var ClassicScenario = (function (_super) {
     ClassicScenario.RoomsTools = {
         Destroy: function (Room, NameSpace) {
             if (NameSpace === void 0) { NameSpace = "/"; }
-            this.io.of(NameSpace).in(Room).clients(function (error, socketIds) {
+            this.io
+                .of(NameSpace)
+                .in(Room)
+                .clients(function (error, socketIds) {
                 if (error)
                     throw error;
-                socketIds.forEach(function (socketId) { return io.sockets.sockets[socketId].leave(Room); });
+                socketIds.forEach(function (socketId) {
+                    return io.sockets.sockets[socketId].leave(Room);
+                });
             });
         },
         party: function (GameId) {
             return "Party@".concat(GameId);
-        }
+        },
     };
     ClassicScenario.IsGameGoingOn = function (_a) {
         var GameId = _a.GameId;
@@ -246,7 +252,7 @@ var ClassicScenario = (function (_super) {
             _id: GameId,
             newData: {
                 IsGameEnded: true,
-            }
+            },
         });
         delete _b.PartiesInfo[GameId];
     };
@@ -258,33 +264,51 @@ var ClassicScenario = (function (_super) {
             _id: GameId,
             newData: {
                 EndTime: EndTime,
-                Win: Win
-            }
+                Win: Win,
+            },
         });
         _b.ScoreBoardService.CalculateScoreBoard(GameId);
         var _c = _b.GetPartyInfo({ GameId: GameId }), StartTime = _c.StartTime, ScoreBoard = _c.ScoreBoard, Quit = _c.Quit;
         ScoreBoard.forEach(function (user) { return __awaiter(void 0, void 0, void 0, function () {
+            var RestData, error_1;
             return __generator(_b, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4, UserManager.IncreasePrimaryCoin(user.UserId, Quit.includes(user.UserId) ? 0 : this.ScoreBoardService.RewardCalculate(user.MvpRank))];
+                    case 0:
+                        console.log("[EndGame/user/".concat(user.UserId, "]: "), user);
+                        return [4, UserManager.IncreasePrimaryCoin(user.UserId, Quit.includes(user.UserId)
+                                ? 0
+                                : this.ScoreBoardService.RewardCalculate(user.MvpRank))];
                     case 1:
                         _a.sent();
-                        return [4, UserManager.ResetGame({
-                                gameId: GameId,
-                                userId: user.UserId,
-                                win: user.Side === Win,
-                                xp: user.Score * user.Booster
-                            })];
+                        RestData = {
+                            gameId: GameId,
+                            userId: user.UserId,
+                            win: user.Side === Win,
+                            xp: user.Score * user.Booster,
+                        };
+                        console.log("[EndGame/RestData/".concat(user.UserId, "]: "), RestData);
+                        _a.label = 2;
                     case 2:
+                        _a.trys.push([2, 4, , 5]);
+                        return [4, UserManager.ResetGame(RestData)];
+                    case 3:
                         _a.sent();
-                        return [2];
+                        return [3, 5];
+                    case 4:
+                        error_1 = _a.sent();
+                        console.log("[EndGame/error/".concat(user.UserId, "]"));
+                        console.trace(error_1);
+                        return [3, 5];
+                    case 5: return [2];
                 }
             });
         }); });
+        console.log("Triggers.ScoreBoard: ".concat(ScoreBoard.length));
+        fs.writeFileSync("SCOREBOARD.json", JSON.stringify(ScoreBoard));
         _b.SendMessageToParty({
             GameId: GameId,
             Event: Triggers.ScoreBoard,
-            Message: ScoreBoard
+            Message: ScoreBoard,
         });
         _b.SendMessageToParty({
             GameId: GameId,
@@ -292,17 +316,18 @@ var ClassicScenario = (function (_super) {
             Message: {
                 GameStatus: Win,
                 GameTime: _b.msToTime(EndTime - StartTime),
-            }
+            },
         });
-        GameModel.SaveResult(_b.GetPartyInfo({ GameId: GameId }))
-            .then(function () { return _b.RemoveParty({ GameId: GameId }); });
+        GameModel.SaveResult(_b.GetPartyInfo({ GameId: GameId })).then(function () {
+            return _b.RemoveParty({ GameId: GameId });
+        });
         console.log("GameEnded");
     };
     ClassicScenario.msToTime = function (duration) {
         var seconds = Math.floor((duration / 1000) % 60), minutes = Math.floor((duration / (1000 * 60)) % 60), hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
-        hours = (hours < 10) ? "0" + hours : hours;
-        minutes = (minutes < 10) ? "0" + minutes : minutes;
-        seconds = (seconds < 10) ? "0" + seconds : seconds;
+        hours = hours < 10 ? "0" + hours : hours;
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
         return hours + ":" + minutes + ":" + seconds;
     };
     ClassicScenario.ScoreBoard = function (_a) {
@@ -321,7 +346,7 @@ var ClassicScenario = (function (_super) {
                 StartTime: StartTime,
                 EndTime: EndTime,
                 GameTime: _b.msToTime(EndTime - StartTime),
-            }
+            },
         });
     };
     ClassicScenario.CheckIsGameGoingOn = function (_a) {
@@ -362,7 +387,7 @@ var ClassicScenario = (function (_super) {
     ClassicScenario.GetUserByRole = function (_a) {
         var GameId = _a.GameId, Role = _a.Role;
         try {
-            var UsersData = (_b.GetPartyInfo({ GameId: GameId })).UsersData;
+            var UsersData = _b.GetPartyInfo({ GameId: GameId }).UsersData;
             return UsersData.filter(function (item) { return item.UserRole === Role; });
         }
         catch (e) {
@@ -372,7 +397,7 @@ var ClassicScenario = (function (_super) {
     ClassicScenario.GetUserById = function (_a) {
         var GameId = _a.GameId, UserId = _a.UserId;
         try {
-            var UsersData = (_b.GetPartyInfo({ GameId: GameId })).UsersData;
+            var UsersData = _b.GetPartyInfo({ GameId: GameId }).UsersData;
             return UsersData.find(function (item) { return item.UserId === UserId; });
         }
         catch (e) {
@@ -380,86 +405,96 @@ var ClassicScenario = (function (_super) {
         }
     };
     ClassicScenario.InitParty = function (data) { return __awaiter(void 0, void 0, void 0, function () {
-        var _id, Members, GameMode, EnvironmentId, Scenario, BasicData, UsersData, ClassicPrice, _a, _i, _c, user, e_1;
-        return __generator(_b, function (_d) {
-            switch (_d.label) {
+        var _id, Members, GameMode, EnvironmentId, Scenario, BasicData, UsersData, ClassicPrice, nonVipUsers, _i, _a, user, _c, _d, e_1;
+        var _e;
+        return __generator(_b, function (_f) {
+            switch (_f.label) {
                 case 0:
-                    _d.trys.push([0, 7, , 8]);
+                    _f.trys.push([0, 10, , 11]);
                     _id = data._id, Members = data.Members, GameMode = data.GameMode, EnvironmentId = data.EnvironmentId, Scenario = data.Scenario;
                     BasicData = __assign({}, PartyBasicModel);
                     return [4, UserManager.GetUsersInfoByIds(Members)];
                 case 1:
-                    UsersData = (_d.sent()).Payload;
+                    UsersData = (_f.sent()).Payload;
                     return [4, game_redis_1.default.GetPrice("Classic")];
                 case 2:
-                    ClassicPrice = _d.sent();
-                    return [4, UserManager.GamePay(Members, parseInt(ClassicPrice))];
+                    ClassicPrice = _f.sent();
+                    BasicData.UsersData = UsersData.map(function (item) {
+                        return {
+                            UserId: item._id,
+                            UserName: item.UserName,
+                            Vip: item.Vip,
+                            Character: item.Character,
+                            UserRole: 0,
+                            Index: 0,
+                        };
+                    });
+                    nonVipUsers = BasicData.UsersData.filter(function (_a) {
+                        var Vip = _a.Vip;
+                        return !Vip;
+                    }).map(function (_a) {
+                        var UserId = _a.UserId;
+                        return UserId;
+                    });
+                    return [4, UserManager.GamePay(nonVipUsers, parseInt(ClassicPrice))];
                 case 3:
-                    _d.sent();
-                    BasicData.UsersData = UsersData.map(function (item) { return __awaiter(void 0, void 0, void 0, function () {
-                        var _a;
-                        return __generator(this, function (_c) {
-                            switch (_c.label) {
-                                case 0:
-                                    _a = {
-                                        UserId: item._id,
-                                        UserName: item.UserName,
-                                        Vip: item.Vip
-                                    };
-                                    return [4, inventory_model_1.default.GetBooster(item._id.toString())];
-                                case 1: return [2, (_a.Booster = _c.sent(),
-                                        _a.Character = item.Character,
-                                        _a.UserRole = 0,
-                                        _a.Index = 0,
-                                        _a)];
-                            }
-                        });
-                    }); });
-                    _a = BasicData;
-                    return [4, Promise.all(BasicData.UsersData)];
-                case 4:
-                    _a.UsersData = _d.sent();
+                    _f.sent();
+                    console.log("[InitParty] BasicData.UsersData: ", BasicData.UsersData);
                     BasicData.Members = Members;
                     BasicData._id = _id;
                     BasicData.IsGameEnded = false;
                     BasicData.Scenario = Scenario;
                     BasicData.StartTime = Date.now();
                     BasicData.Scores = {};
-                    for (_i = 0, _c = BasicData.UsersData; _i < _c.length; _i++) {
-                        user = _c[_i];
-                        BasicData.Scores[user.UserId] = {
-                            UserId: user.UserId,
-                            UserName: user.UserName,
-                            Score: 0,
-                            Role: 0,
-                            Side: 0,
-                            UseAbility: 0,
-                            Court: 0,
-                            CorrectVote: 0,
-                            MvpRank: 0,
-                        };
-                    }
+                    _i = 0, _a = BasicData.UsersData;
+                    _f.label = 4;
+                case 4:
+                    if (!(_i < _a.length)) return [3, 7];
+                    user = _a[_i];
+                    _c = BasicData.Scores;
+                    _d = user.UserId;
+                    _e = {
+                        UserId: user.UserId,
+                        UserName: user.UserName,
+                        Score: 0,
+                        Role: 0
+                    };
+                    return [4, inventory_model_1.default.GetBooster(user.UserId.toString())];
+                case 5:
+                    _c[_d] = (_e.Booster = _f.sent(),
+                        _e.Side = 0,
+                        _e.UseAbility = 0,
+                        _e.Court = 0,
+                        _e.CorrectVote = 0,
+                        _e.MvpRank = 0,
+                        _e);
+                    _f.label = 6;
+                case 6:
+                    _i++;
+                    return [3, 4];
+                case 7:
+                    console.log("[InitParty] BasicData.Scores", BasicData.Scores);
                     BasicData.Alive = Members;
                     BasicData.EnvironmentID = EnvironmentId;
                     BasicData.Votes = [];
                     BasicData.GameMode = GameMode;
                     BasicData.Ready = [];
                     BasicData.IsStarted = false;
-                    BasicData.MemberLimit = 12;
+                    BasicData.MemberLimit = 10;
                     this.UpdatePartyInfo({ _id: _id, newData: BasicData });
                     this.ResetGameConfigs(_id);
                     return [4, this.SetIndexToUsers(_id)];
-                case 5:
-                    _d.sent();
+                case 8:
+                    _f.sent();
                     return [4, this.SetRoleToUsers(_id)];
-                case 6:
-                    _d.sent();
+                case 9:
+                    _f.sent();
                     return [2, true];
-                case 7:
-                    e_1 = _d.sent();
+                case 10:
+                    e_1 = _f.sent();
                     console.trace(e_1);
                     return [2, false];
-                case 8: return [2];
+                case 11: return [2];
             }
         });
     }); };
@@ -475,7 +510,7 @@ var ClassicScenario = (function (_super) {
         console.log("EndFirstVoteProcess");
         console.log("CourtList");
         console.log("Concluding NoonSleep... \n result =>  ".concat(CourtList.length > 1));
-        console.log(CourtList);
+        console.log({ CourtList: CourtList });
         CourtList.forEach(function (user) {
             _b.ScoreBoardService.Court(GameId, user);
         });
@@ -485,7 +520,7 @@ var ClassicScenario = (function (_super) {
                 Court: CourtList,
                 CourtQueue: CourtList,
                 NoonSleepStatus: false,
-            }
+            },
         });
         if (CourtList.length === 0) {
             console.log("StartDay From End First Vote Proccess");
@@ -505,8 +540,8 @@ var ClassicScenario = (function (_super) {
                 _id: GameId,
                 newData: {
                     Court: CourtList,
-                    GameState: GameStates.CourtSpeak
-                }
+                    GameState: GameStates.CourtSpeak,
+                },
             });
             if (CurrentTurnUser) {
                 var isAlive = GameInfo.Alive.includes(CurrentTurnUser);
@@ -515,21 +550,20 @@ var ClassicScenario = (function (_super) {
                     _b.UpdatePartyInfo({
                         _id: GameId,
                         newData: {
-                            CurrentTurnUser: CurrentTurnUser
-                        }
+                            CurrentTurnUser: CurrentTurnUser,
+                        },
                     });
                     _b.SendMessageToParty({
                         GameId: GameId,
                         Event: Triggers.PassCourtSpeak,
                         Message: {
-                            UserId: CurrentTurnUser
-                        }
+                            UserId: CurrentTurnUser,
+                        },
                     });
                 }
                 else {
                     console.log("dead user passed => isAlive: ".concat(isAlive, "  isOnline: ").concat(isOnline));
-                    _b.CourtSpeak({ GameId: GameId }).then(function () {
-                    });
+                    _b.CourtSpeak({ GameId: GameId });
                 }
             }
             else {
@@ -565,13 +599,15 @@ var ClassicScenario = (function (_super) {
                 switch (_d.label) {
                     case 0:
                         console.log("EndCourtSpeakProcess");
-                        _c = this.GetPartyInfo({ GameId: GameId }), CourtQueue = _c.CourtQueue, NoonSleepStatus = _c.NoonSleepStatus;
+                        _c = this.GetPartyInfo({
+                            GameId: GameId,
+                        }), CourtQueue = _c.CourtQueue, NoonSleepStatus = _c.NoonSleepStatus;
                         console.log({ NoonSleepStatus: NoonSleepStatus, Section: 2 });
                         this.UpdatePartyInfo({
                             _id: GameId,
                             newData: {
-                                GameState: GameStates.SecondVote
-                            }
+                                GameState: GameStates.SecondVote,
+                            },
                         });
                         return [4, this.SendMessageToParty({
                                 GameId: GameId,
@@ -579,8 +615,8 @@ var ClassicScenario = (function (_super) {
                                 Message: {
                                     UserId: CourtQueue[0],
                                     IsCourt: true,
-                                    NoonSleep: NoonSleepStatus
-                                }
+                                    NoonSleep: NoonSleepStatus,
+                                },
                             })];
                     case 1:
                         _d.sent();
@@ -596,7 +632,7 @@ var ClassicScenario = (function (_super) {
                 this.PushItemToPartyInfo({
                     _id: GameId,
                     Path: "Quit",
-                    Item: SocketNode.handshake.query.userId
+                    Item: SocketNode.handshake.query.userId,
                 });
                 this.PushToKills({
                     GameId: GameId,
@@ -617,8 +653,15 @@ var ClassicScenario = (function (_super) {
                 switch (_c.label) {
                     case 0:
                         console.log("ConcludeTheNight");
-                        this.GameConfigTools.Increase({ GameId: GameId, Path: "ConcludeTheNight", Count: 1 });
-                        ConcludeTheNight = this.GameConfigTools.Get({ GameId: GameId, Path: "ConcludeTheNight" });
+                        this.GameConfigTools.Increase({
+                            GameId: GameId,
+                            Path: "ConcludeTheNight",
+                            Count: 1,
+                        });
+                        ConcludeTheNight = this.GameConfigTools.Get({
+                            GameId: GameId,
+                            Path: "ConcludeTheNight",
+                        });
                         if (!(ConcludeTheNight === 1)) return [3, 2];
                         console.log("Check Start Conclude The Night: ".concat(ConcludeTheNight));
                         return [4, this.ConcludeTheNight({ GameId: GameId })];
@@ -634,7 +677,9 @@ var ClassicScenario = (function (_super) {
         try {
             var PartyInfo = _b.GetPartyInfo({ GameId: GameId });
             var config = {
-                "62b061de684c274ef0c2dfaa": Roles.GodFather,
+                "62e13305ef174cf2f80eaaed": Roles.Mafia,
+                "62d7bd64049b2c8bf7f28366": Roles.Mafia,
+                "62d7bb5a049b2c8bf7f28315": Roles.Mafia,
             };
             var configId_1 = {};
             for (var user in config) {
@@ -642,19 +687,34 @@ var ClassicScenario = (function (_super) {
                     configId_1[user] = config[user];
                 }
             }
-            var membersLength = (PartyInfo.Members.length) - Object.values(configId_1).length;
+            var membersLength = PartyInfo.Members.length - Object.values(configId_1).length;
             var nums = new Set();
             while (nums.size !== membersLength) {
                 nums.add(Math.floor(Math.random() * membersLength));
             }
             var indexes = Array.from(nums);
             var RolesInGame = [
-                Roles.Citizen, Roles.Citizen, Roles.Citizen, Roles.Immortal, Roles.Detective, Roles.Doctor, Roles.Sniper,
-                Roles.GodFather, Roles.Mafia, Roles.Mafia
+                Roles.Citizen,
+                Roles.Citizen,
+                Roles.Citizen,
+                Roles.Immortal,
+                Roles.Detective,
+                Roles.Doctor,
+                Roles.Sniper,
+                Roles.GodFather,
+                Roles.Mafia,
+                Roles.Mafia,
             ];
             RolesInGame = RolesInGame.filter(function (role) {
-                return !(Object.values(configId_1).includes(role));
+                return !Object.values(configId_1).includes(role);
             });
+            if (RolesInGame.filter(function (role) { return role === Roles.Mafia; }).length === 0) {
+                RolesInGame.push(Roles.Mafia);
+                RolesInGame.push(Roles.Mafia);
+            }
+            if (RolesInGame.filter(function (role) { return role === Roles.Mafia; }).length === 1) {
+                RolesInGame.push(Roles.Mafia);
+            }
             var j = 0;
             for (var i = 0; i < PartyInfo.Members.length; i++) {
                 var userId = PartyInfo.UsersData[i].UserId;
@@ -670,7 +730,10 @@ var ClassicScenario = (function (_super) {
                     j++;
                 }
             }
-            _b.UpdatePartyInfo({ _id: GameId, newData: { UsersData: PartyInfo.UsersData } });
+            _b.UpdatePartyInfo({
+                _id: GameId,
+                newData: { UsersData: PartyInfo.UsersData },
+            });
             return true;
         }
         catch (e) {
@@ -686,15 +749,26 @@ var ClassicScenario = (function (_super) {
             }
             var indexes = Array.from(nums);
             var RolesInGame = [
-                Roles.Citizen, Roles.Citizen, Roles.Citizen, Roles.Immortal, Roles.Detective, Roles.Doctor, Roles.Sniper,
-                Roles.GodFather, Roles.Mafia, Roles.Mafia
+                Roles.Citizen,
+                Roles.Citizen,
+                Roles.Citizen,
+                Roles.Immortal,
+                Roles.Detective,
+                Roles.Doctor,
+                Roles.Sniper,
+                Roles.GodFather,
+                Roles.Mafia,
+                Roles.Mafia,
             ];
             for (var i = 0; i < RolesInGame.length; i++) {
                 var userRole = RolesInGame[indexes[i]];
                 PartyInfo.UsersData[i].UserRole = userRole;
                 _b.ScoreBoardService.SetRoleAndSide(GameId, PartyInfo.UsersData[i].UserId, userRole);
             }
-            _b.UpdatePartyInfo({ _id: GameId, newData: { UsersData: PartyInfo.UsersData } });
+            _b.UpdatePartyInfo({
+                _id: GameId,
+                newData: { UsersData: PartyInfo.UsersData },
+            });
             return true;
         }
         catch (e) {
@@ -712,13 +786,16 @@ var ClassicScenario = (function (_super) {
                     PartyInfo = _a.sent();
                     nums = new Set();
                     while (nums.size !== PartyInfo.Members.length) {
-                        nums.add((Math.floor(Math.random() * PartyInfo.Members.length)) + 1);
+                        nums.add(Math.floor(Math.random() * PartyInfo.Members.length) + 1);
                     }
                     indexes = Array.from(nums);
                     for (index in PartyInfo.Members) {
                         PartyInfo.UsersData[parseInt(index)].Index = indexes[parseInt(index)];
                     }
-                    return [4, this.UpdatePartyInfo({ _id: GameId, newData: { UsersData: PartyInfo.UsersData } })];
+                    return [4, this.UpdatePartyInfo({
+                            _id: GameId,
+                            newData: { UsersData: PartyInfo.UsersData },
+                        })];
                 case 2:
                     _a.sent();
                     return [2, true];
@@ -734,8 +811,7 @@ var ClassicScenario = (function (_super) {
         return __awaiter(void 0, void 0, void 0, function () {
             return __generator(_b, function (_c) {
                 try {
-                    AddUserToFirstTalker({ UserId: UserId, GameId: GameId })
-                        .catch(console.trace);
+                    AddUserToFirstTalker({ UserId: UserId, GameId: GameId }).catch(console.trace);
                     return [2, true];
                 }
                 catch (e) {
@@ -787,7 +863,7 @@ var ClassicScenario = (function (_super) {
                 var Index = UsersList.findIndex(function (user) {
                     return user.UserId === PartyInfo_1.Starter;
                 });
-                var SpeakList = __spreadArray(__spreadArray([], (UsersList.slice(Index)), true), (UsersList.slice(0, Index)), true);
+                var SpeakList = __spreadArray(__spreadArray([], UsersList.slice(Index), true), UsersList.slice(0, Index), true);
                 SpeakList = SpeakList.filter(function (user) {
                     return PartyInfo_1.Alive.includes(user.UserId);
                 });
@@ -803,16 +879,17 @@ var ClassicScenario = (function (_super) {
                 var Index = UsersList.findIndex(function (user) {
                     return user.UserId === PartyInfo_1.Starter;
                 });
-                var SpeakList = __spreadArray(__spreadArray([], (UsersList.slice(Index + 2)), true), (UsersList.slice(0, Index + 2)), true);
+                var SpeakList = __spreadArray(__spreadArray([], UsersList.slice(Index + 2), true), UsersList.slice(0, Index + 2), true);
                 SpeakList = SpeakList.filter(function (user) {
                     return PartyInfo_1.Alive.includes(user.UserId);
                 });
                 _b.UpdatePartyInfo({
-                    _id: GameId, newData: {
+                    _id: GameId,
+                    newData: {
                         Starter: SpeakList[0].UserId,
                         SpeakList: SpeakList,
                         VoteList: SpeakList,
-                    }
+                    },
                 });
                 return true;
             }
@@ -828,14 +905,14 @@ var ClassicScenario = (function (_super) {
             switch (_a.label) {
                 case 0:
                     IsStarted = this.GetPartyInfo({ GameId: GameId }).IsStarted;
-                    if (!(!IsStarted || BYPASS)) return [3, 4];
+                    if (!!IsStarted) return [3, 4];
                     console.log("IsStarted?: ".concat(IsStarted));
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
                     this.UpdatePartyInfo({
                         _id: GameId,
-                        newData: { IsStarted: true, _id: GameId }
+                        newData: { IsStarted: true, _id: GameId },
                     });
                     return [4, this.StartDay({ GameId: GameId, SocketNode: data.SocketNode })];
                 case 2:
@@ -855,7 +932,7 @@ var ClassicScenario = (function (_super) {
             GameId: GameId,
             Event: Triggers.IntroNight,
             Message: {
-                GameState: true
+                GameState: true,
             },
         });
     };
@@ -894,7 +971,7 @@ var ClassicScenario = (function (_super) {
                 _id: _id,
                 Path: Path,
                 Item: Item,
-                PartiesInfo: _b.PartiesInfo[_id][Path]
+                PartiesInfo: _b.PartiesInfo[_id][Path],
             });
             console.trace(e);
             return false;
@@ -921,14 +998,14 @@ var ClassicScenario = (function (_super) {
                 _b.PushItemToPartyInfo({
                     _id: GameId,
                     Path: "ChallengeList",
-                    Item: UserId
+                    Item: UserId,
                 });
                 _b.SendMessageToParty({
                     GameId: GameId,
                     Event: Triggers.ChallengeRequest,
                     Message: {
-                        Challenge: UserId
-                    }
+                        Challenge: UserId,
+                    },
                 });
             }
         }
@@ -945,25 +1022,27 @@ var ClassicScenario = (function (_super) {
             console.log("AcceptChallenge: ", {
                 ChallengeList: ChallengeList,
                 CurrentTurnUser: CurrentTurnUser,
-                UserId: UserId
+                UserId: UserId,
             });
             var isChallengerInChallengeList = ChallengeList === null || ChallengeList === void 0 ? void 0 : ChallengeList.includes(Challenger);
             var canUserAcceptChallenge = CurrentTurnUser === UserId;
             var isUserAcceptingChallengeOfAnotherUser = Challenger !== UserId;
-            if (isChallengerInChallengeList && canUserAcceptChallenge && isUserAcceptingChallengeOfAnotherUser) {
+            if (isChallengerInChallengeList &&
+                canUserAcceptChallenge &&
+                isUserAcceptingChallengeOfAnotherUser) {
                 _b.UpdatePartyInfo({
                     _id: GameId,
                     newData: {
                         Challenge: Challenger,
                         ChallengeList: [],
-                    }
+                    },
                 });
                 _b.SendMessageToParty({
                     GameId: GameId,
                     Event: Triggers.AcceptChallenge,
                     Message: {
                         Challenge: Challenger,
-                    }
+                    },
                 });
             }
         }
@@ -974,7 +1053,6 @@ var ClassicScenario = (function (_super) {
     };
     ClassicScenario.Ready = function (data) { return __awaiter(void 0, void 0, void 0, function () {
         var UserInfo_1, PartyInfo, isMember, e_4;
-        var _this = _b;
         var _a;
         return __generator(_b, function (_c) {
             switch (_c.label) {
@@ -986,8 +1064,9 @@ var ClassicScenario = (function (_super) {
                     PartyInfo = this.GetPartyInfo({ GameId: UserInfo_1.GameId });
                     isMember = (_a = PartyInfo.Members) === null || _a === void 0 ? void 0 : _a.includes(data.UserId);
                     if (!isMember) return [3, 3];
+                    console.log("is member");
                     return [4, this.JoinToRoom({ GameId: UserInfo_1.GameId.toString() }, data.SocketNode, function () {
-                            _this.Execute(UserInfo_1.GameId, data).then();
+                            ClassicScenario.Execute(UserInfo_1.GameId, data).then();
                         })];
                 case 2:
                     _c.sent();
@@ -1008,7 +1087,8 @@ var ClassicScenario = (function (_super) {
         if (IsStarted) {
             console.log("SPEAK LIST: ", GameInfo.SpeakList);
         }
-        if (GameInfo.CurrentTurnUser === (SocketNode === null || SocketNode === void 0 ? void 0 : SocketNode.handshake.query.userId) || IsStarted) {
+        if (GameInfo.CurrentTurnUser === (SocketNode === null || SocketNode === void 0 ? void 0 : SocketNode.handshake.query.userId) ||
+            IsStarted) {
             console.log("PassTurn: ".concat(SocketNode.handshake.query.userId));
             if (SpeakList.length === 0) {
                 _b.EndPassTurnProcess({ GameId: GameId }).then();
@@ -1032,23 +1112,29 @@ var ClassicScenario = (function (_super) {
             }
             else {
                 currentTurnUser = {
-                    UserId: GameInfo.Challenge
+                    UserId: GameInfo.Challenge,
                 };
                 _b.UpdatePartyInfo({
                     _id: GameId,
                     newData: {
                         ChallengeList: [],
                         Challenge: "",
-                    }
+                    },
                 });
             }
             if (currentTurnUser) {
-                _b.UpdatePartyInfo({ _id: GameId, newData: { CurrentTurnUser: currentTurnUser.UserId } });
+                _b.UpdatePartyInfo({
+                    _id: GameId,
+                    newData: { CurrentTurnUser: currentTurnUser.UserId },
+                });
                 var isAlive = GameInfo.Alive.includes(currentTurnUser.UserId);
                 var isOnline = !GameInfo.DisconnectedUsers.includes(currentTurnUser.UserId);
                 var isNotSilence = GameInfo.PsychiatristChoice !== currentTurnUser.UserId;
                 if (!isNotSilence) {
-                    _b.UpdatePartyInfo({ _id: GameId, newData: { PsychiatristChoice: "" } });
+                    _b.UpdatePartyInfo({
+                        _id: GameId,
+                        newData: { PsychiatristChoice: "" },
+                    });
                 }
                 if (isAlive && isOnline && isNotSilence) {
                     _b.SendMessageToParty({
@@ -1057,7 +1143,7 @@ var ClassicScenario = (function (_super) {
                         Message: {
                             UserId: currentTurnUser.UserId,
                             Challenge: Challenge,
-                            IsIntroductionDay: _b.IsIntroductionDay({ GameId: GameId })
+                            IsIntroductionDay: _b.IsIntroductionDay({ GameId: GameId }),
                         },
                     });
                 }
@@ -1093,7 +1179,7 @@ var ClassicScenario = (function (_super) {
                                 Event: Triggers.Speak,
                                 Message: {
                                     UserId: "End",
-                                }
+                                },
                             })];
                     case 1:
                         _d.sent();
@@ -1107,7 +1193,7 @@ var ClassicScenario = (function (_super) {
                                 DetectiveChoice: "",
                                 DoctorChoice: "",
                                 SniperChoice: "",
-                            }
+                            },
                         });
                         console.log("End Pass Turn Process");
                         if (this.IsIntroductionDay({ GameId: GameId })) {
@@ -1115,7 +1201,9 @@ var ClassicScenario = (function (_super) {
                             this.StartNight({ GameId: GameId });
                             return [2];
                         }
-                        _c = this.GetPartyInfo({ GameId: GameId }), VoteList_1 = _c.VoteList, NoonSleepStatus_1 = _c.NoonSleepStatus;
+                        _c = this.GetPartyInfo({
+                            GameId: GameId,
+                        }), VoteList_1 = _c.VoteList, NoonSleepStatus_1 = _c.NoonSleepStatus;
                         setTimeout(function () {
                             console.log({ NoonSleepStatus: NoonSleepStatus_1, Section: 1 });
                             ClassicScenario.SendMessageToParty({
@@ -1124,8 +1212,8 @@ var ClassicScenario = (function (_super) {
                                 Message: {
                                     UserId: VoteList_1[0].UserId,
                                     IsCourt: false,
-                                    NoonSleep: NoonSleepStatus_1
-                                }
+                                    NoonSleep: NoonSleepStatus_1,
+                                },
                             });
                         }, 5000);
                         return [3, 3];
@@ -1156,7 +1244,7 @@ var ClassicScenario = (function (_super) {
                 else {
                     UserRole = GetUserRole;
                 }
-                return __assign({ IsOnline: !(PartyInfo.DisconnectedUsers.includes(user.UserId)), IsAlive: PartyInfo.Alive.includes(user.UserId), UserRole: UserRole, UserSide: UserSide }, user);
+                return __assign({ IsOnline: !PartyInfo.DisconnectedUsers.includes(user.UserId), IsAlive: PartyInfo.Alive.includes(user.UserId), UserRole: UserRole, UserSide: UserSide }, user);
             }
             catch (e) {
                 console.trace(e);
@@ -1172,16 +1260,16 @@ var ClassicScenario = (function (_super) {
     ClassicScenario.ConcludeFirstVote = function (_a) {
         var GameId = _a.GameId;
         var _c = _b.GetPartyInfo({ GameId: GameId }), Votes = _c.Votes, Alive = _c.Alive;
-        var VoteLimit = (Math.round(Alive.length / 2));
+        var VoteLimit = Math.round(Alive.length / 2);
         var Victims = {};
         var TrueVotes = Votes.filter(function (vote) {
             return vote.IsVoted;
         });
         for (var _i = 0, TrueVotes_1 = TrueVotes; _i < TrueVotes_1.length; _i++) {
             var Vote = TrueVotes_1[_i];
-            Victims[Vote.VictimId] === undefined ?
-                Victims[Vote.VictimId] = new Set([Vote.UserId.toString()]) :
-                Victims[Vote.VictimId].add(Vote.UserId.toString());
+            Victims[Vote.VictimId] === undefined
+                ? (Victims[Vote.VictimId] = new Set([Vote.UserId.toString()]))
+                : Victims[Vote.VictimId].add(Vote.UserId.toString());
         }
         var CourtList = [];
         for (var Victim in Victims) {
@@ -1192,13 +1280,12 @@ var ClassicScenario = (function (_super) {
             CourtList: CourtList,
             VoteLimit: VoteLimit,
             Victims: Victims,
-            TrueVotesLength: TrueVotes.length
+            TrueVotesLength: TrueVotes.length,
         });
-        return CourtList;
+        return Array.from(new Set(CourtList));
     };
     ClassicScenario.Vote = function (data) { return __awaiter(void 0, void 0, void 0, function () {
         var SocketNode_1, _a, NoonSleep_1, _c, IsCourt_1, UserId, GameId_1, VictimId, IsVoted, UserSide, TargetSide, NextUser_1, e_6;
-        var _this = _b;
         return __generator(_b, function (_d) {
             switch (_d.label) {
                 case 0:
@@ -1221,18 +1308,18 @@ var ClassicScenario = (function (_super) {
                             IsVoted: IsVoted,
                             NoonSleep: NoonSleep_1,
                             IsCourt: IsCourt_1,
-                        }
+                        },
                     });
-                    NextUser_1 = IsCourt_1 ?
-                        this.NextSecondVote({ SocketNode: SocketNode_1, GameId: GameId_1, UserId: VictimId }) :
-                        this.NextFirstVote({ SocketNode: SocketNode_1, GameId: GameId_1, UserId: VictimId });
+                    NextUser_1 = IsCourt_1
+                        ? this.NextSecondVote({ SocketNode: SocketNode_1, GameId: GameId_1, UserId: VictimId })
+                        : this.NextFirstVote({ SocketNode: SocketNode_1, GameId: GameId_1, UserId: VictimId });
                     if (!(!!NextUser_1 && SocketNode_1)) return [3, 1];
                     setTimeout(function () {
-                        _this.SendMessageToUser({
+                        ClassicScenario.SendMessageToUser({
                             Message: {
                                 UserId: NextUser_1,
                                 IsCourt: IsCourt_1,
-                                NoonSleep: NoonSleep_1
+                                NoonSleep: NoonSleep_1,
                             },
                             GameId: GameId_1,
                             Event: Triggers.Vote,
@@ -1244,7 +1331,7 @@ var ClassicScenario = (function (_super) {
                         Message: {
                             UserId: "End",
                             IsCourt: IsCourt_1,
-                            NoonSleep: NoonSleep_1
+                            NoonSleep: NoonSleep_1,
                         },
                         GameId: GameId_1,
                         Event: Triggers.Vote,
@@ -1288,10 +1375,13 @@ var ClassicScenario = (function (_super) {
         var connectedUser = Alive.filter(function (item) { return !Kills.includes(item); });
         connectedUser = Alive.filter(function (item) { return !DisconnectedUsers.includes(item); });
         _b.GameConfigTools.Increase({ GameId: GameId, Path: "FirstVote" });
-        var MemberLength = _b.GameConfigTools.Get({ GameId: GameId, Path: "FirstVote" });
+        var MemberLength = _b.GameConfigTools.Get({
+            GameId: GameId,
+            Path: "FirstVote",
+        });
         if (MemberLength >= connectedUser.length) {
             setTimeout(function () {
-                _b.EndFirstVoteProcess({ GameId: GameId });
+                ClassicScenario.EndFirstVoteProcess({ GameId: GameId });
             }, 1000);
         }
     };
@@ -1299,7 +1389,7 @@ var ClassicScenario = (function (_super) {
         var _c = _a.GameId, GameId = _c === void 0 ? "" : _c, _d = _a.UserId, UserId = _d === void 0 ? "" : _d;
         var CourtQueue = _b.GetPartyInfo({ GameId: GameId }).CourtQueue;
         var UserIndex = CourtQueue.indexOf(UserId);
-        if ((UserIndex + 1) === CourtQueue.length) {
+        if (UserIndex + 1 === CourtQueue.length) {
             return "";
         }
         else {
@@ -1312,7 +1402,10 @@ var ClassicScenario = (function (_super) {
             var MembersLength;
             return __generator(_b, function (_c) {
                 this.GameConfigTools.Increase({ GameId: GameId, Path: "SecondVote" });
-                MembersLength = this.GameConfigTools.Get({ GameId: GameId, Path: "SecondVote" });
+                MembersLength = this.GameConfigTools.Get({
+                    GameId: GameId,
+                    Path: "SecondVote",
+                });
                 console.log("".concat(this.ioTools.GetQuery(SocketNode).userId, "@EndSecondVoteForUser"), MembersLength);
                 if (MembersLength === 1) {
                     setTimeout(function () {
@@ -1330,7 +1423,7 @@ var ClassicScenario = (function (_super) {
         var Victims = {};
         var _loop_1 = function (Victim) {
             Victims[Victim] = Votes.filter(function (vote) {
-                return vote.IsVoted && vote.IsCourt && vote.VictimId.toString() === Victim;
+                return (vote.IsVoted && vote.IsCourt && vote.VictimId.toString() === Victim);
             }).map(function (vote) { return vote.UserId.toString(); });
             Victims[Victim] = new Set(Victims[Victim]);
         };
@@ -1349,7 +1442,11 @@ var ClassicScenario = (function (_super) {
         });
         if (MaxVoteLength >= _b.ConcludeFirstVoteLimit(Alive.length)) {
             if (MaxVotedUsers.length === 1) {
-                _b.UserExecute({ GameId: GameId, UserId: MaxVotedUsers[0], DieByRecord: false });
+                _b.UserExecute({
+                    GameId: GameId,
+                    UserId: MaxVotedUsers[0],
+                    DieByRecord: false,
+                });
             }
             else {
                 var UsersRecords = {};
@@ -1357,7 +1454,7 @@ var ClassicScenario = (function (_super) {
                     var user = MaxVotedUsers_1[_d];
                     UsersRecords[user] = _b.GetRecord({ GameId: GameId, UserId: user });
                 }
-                var MaxRecordLength_1 = Math.max.apply(Math, (Object.values(UsersRecords)));
+                var MaxRecordLength_1 = Math.max.apply(Math, Object.values(UsersRecords));
                 var MaxRecordUsers = Object.entries(UsersRecords)
                     .filter(function (_a) {
                     var _ = _a[0], record = _a[1];
@@ -1370,7 +1467,11 @@ var ClassicScenario = (function (_super) {
                 });
                 if (Object.values(MaxRecordUsers).length === 1) {
                     var killedUsers = Object.keys(MaxRecordUsers);
-                    _b.UserExecute({ GameId: GameId, UserId: killedUsers[0], DieByRecord: true });
+                    _b.UserExecute({
+                        GameId: GameId,
+                        UserId: killedUsers[0],
+                        DieByRecord: true,
+                    });
                 }
                 else {
                     _b.StartNight({ GameId: GameId });
@@ -1422,14 +1523,17 @@ var ClassicScenario = (function (_super) {
             GameId: GameId,
             Event: Triggers.ExecutionAnimation,
             Message: {
-                Mode: (~~(Math.random() * 3) + 1)
-            }
+                Mode: ~~(Math.random() * 3) + 1,
+            },
         });
     };
     ClassicScenario.ExecutionAnimation = function (_a) {
         var GameId = _a.GameId;
         _b.GameConfigTools.Increase({ GameId: GameId, Path: "ExecutionAnimation" });
-        var countExecutionAnimation = _b.GameConfigTools.Get({ GameId: GameId, Path: "ExecutionAnimation" });
+        var countExecutionAnimation = _b.GameConfigTools.Get({
+            GameId: GameId,
+            Path: "ExecutionAnimation",
+        });
         if (countExecutionAnimation === 1) {
             _b.StartNight({ GameId: GameId });
         }
@@ -1444,7 +1548,7 @@ var ClassicScenario = (function (_super) {
             _b.IncreaseItemFromPartyInfo({
                 _id: GameId,
                 Path: "ImmortalShield",
-                Count: -1
+                Count: -1,
             });
             _b.SendMessageToParty({
                 GameId: GameId,
@@ -1453,16 +1557,16 @@ var ClassicScenario = (function (_super) {
                     DieByRecord: DieByRecord,
                     ExecutionAnimation: User.Vip,
                     IsImmortal: true,
-                    UserId: UserId
-                }
+                    UserId: UserId,
+                },
             });
         }
         else {
             _b.UpdatePartyInfo({
                 _id: GameId,
                 newData: {
-                    SituationRequestStatus: true
-                }
+                    SituationRequestStatus: true,
+                },
             });
             _b.SendMessageToParty({
                 GameId: GameId,
@@ -1471,8 +1575,8 @@ var ClassicScenario = (function (_super) {
                     DieByRecord: DieByRecord,
                     ExecutionAnimation: User.Vip,
                     IsImmortal: false,
-                    UserId: UserId
-                }
+                    UserId: UserId,
+                },
             });
             _b.PushToKills({ GameId: GameId, Kills: Kills });
         }
@@ -1493,15 +1597,15 @@ var ClassicScenario = (function (_super) {
                 this.UpdatePartyInfo({
                     _id: GameId,
                     newData: {
-                        MafiaChoice: Target
-                    }
+                        MafiaChoice: Target,
+                    },
                 });
             }
             console.log("UseAbility(Validation): ", {
                 SenderRole: SenderRole,
                 UserRole: UserRole,
                 UserId: UserId,
-                MafiaShotRight: MafiaShotRight
+                MafiaShotRight: MafiaShotRight,
             });
             if (SenderRole === UserRole && Target !== "") {
                 if ([Roles.Doctor, Roles.Sniper].includes(UserRole)) {
@@ -1509,14 +1613,14 @@ var ClassicScenario = (function (_super) {
                         GameId: GameId,
                         Target: Target,
                         UserId: UserId,
-                        UserRole: UserRole
+                        UserRole: UserRole,
                     });
                 }
                 if ([Roles.Detective].includes(UserRole)) {
                     this.UnLimitedAbility({
                         GameId: GameId,
                         Target: Target,
-                        UserRole: UserRole
+                        UserRole: UserRole,
                     });
                 }
             }
@@ -1541,7 +1645,7 @@ var ClassicScenario = (function (_super) {
             _id: GameId,
             newData: (_e = {},
                 _e[PartyInfoPath[UserRole].Action] = Target,
-                _e)
+                _e),
         });
     };
     ClassicScenario.LimitedAbility = function (_a) {
@@ -1551,7 +1655,9 @@ var ClassicScenario = (function (_super) {
             _c[Roles.Doctor] = { Action: "DoctorChoice", Path: "DoctorSaveItself" },
             _c[Roles.Sniper] = { Action: "SniperChoice", Path: "SniperShotCount" },
             _c);
-        var _f = _b.GetPartyInfo({ GameId: GameId }), _g = PartyInfoPath[UserRole].Path, AbilityCount = _f[_g];
+        var _f = _b.GetPartyInfo({
+            GameId: GameId,
+        }), _g = PartyInfoPath[UserRole].Path, AbilityCount = _f[_g];
         console.log("LimitedAbility: ", {
             GameId: GameId,
             Target: Target,
@@ -1573,7 +1679,7 @@ var ClassicScenario = (function (_super) {
             _b.IncreaseItemFromPartyInfo({
                 _id: GameId,
                 Path: PartyInfoPath[UserRole].Path,
-                Count: -1
+                Count: -1,
             });
         }
         else if (Target !== UserId && [Roles.Doctor].includes(UserRole)) {
@@ -1611,7 +1717,7 @@ var ClassicScenario = (function (_super) {
                 Message: {
                     Alive: Alive.toString(),
                     Kills: Kills.toString(),
-                    DayCount: DayCount
+                    DayCount: DayCount,
                 },
             });
             _b.SpeakList({ GameId: GameId });
@@ -1620,11 +1726,14 @@ var ClassicScenario = (function (_super) {
     ClassicScenario.StartSpeak = function (_a) {
         var GameId = _a.GameId, SocketNode = _a.SocketNode;
         _b.GameConfigTools.Increase({ GameId: GameId, Path: "StartSpeak" });
-        var MemberLength = _b.GameConfigTools.Get({ GameId: GameId, Path: "StartSpeak" });
+        var MemberLength = _b.GameConfigTools.Get({
+            GameId: GameId,
+            Path: "StartSpeak",
+        });
         console.log("StartSpeakRequest: ".concat(MemberLength));
         if (MemberLength === 1) {
             setTimeout(function () {
-                _b.PassTurn({ GameId: GameId, SocketNode: SocketNode, IsStarted: true });
+                ClassicScenario.PassTurn({ GameId: GameId, SocketNode: SocketNode, IsStarted: true });
             }, 1000);
         }
     };
@@ -1640,7 +1749,7 @@ var ClassicScenario = (function (_super) {
             Message: {
                 UserId: _b.ioTools.GetQuery(SocketNode).userId,
                 Opinion: Opinion,
-            }
+            },
         });
     };
     ClassicScenario.SetDayData = function (_a) {
@@ -1659,8 +1768,8 @@ var ClassicScenario = (function (_super) {
                 VoteList: [],
                 Votes: [],
                 MafiaShotIsDisable: false,
-                GameState: GameStates.PassTurn
-            }
+                GameState: GameStates.PassTurn,
+            },
         });
     };
     ClassicScenario.SetNightData = function (_a) {
@@ -1671,7 +1780,7 @@ var ClassicScenario = (function (_super) {
             _id: GameId,
             newData: {
                 GameState: GameStates.Night,
-            }
+            },
         });
         _b.IncreaseNightCount({ GameId: GameId });
     };
@@ -1691,7 +1800,7 @@ var ClassicScenario = (function (_super) {
             _id: GameId,
             newData: {
                 PartyState: PartyState.Day,
-            }
+            },
         });
     };
     ClassicScenario.IncreaseNightCount = function (_a) {
@@ -1705,7 +1814,7 @@ var ClassicScenario = (function (_super) {
             _id: GameId,
             newData: {
                 PartyState: PartyState.Night,
-            }
+            },
         });
     };
     ClassicScenario.KilledUsers = function (_a) {
@@ -1724,7 +1833,7 @@ var ClassicScenario = (function (_super) {
             _b.PushItemToPartyInfo({
                 _id: GameId,
                 Path: "Kills",
-                Item: Kill
+                Item: Kill,
             });
         }
         for (var _i = 0, UniqueKills_1 = UniqueKills; _i < UniqueKills_1.length; _i++) {
@@ -1733,7 +1842,7 @@ var ClassicScenario = (function (_super) {
                 _b.PushItemToPartyInfo({
                     _id: GameId,
                     Path: "Kills",
-                    Item: User
+                    Item: User,
                 });
             }
         }
@@ -1744,22 +1853,29 @@ var ClassicScenario = (function (_super) {
     ClassicScenario.CalculateAlive = function (_a) {
         var GameId = _a.GameId;
         var _c = _b.GetPartyInfo({ GameId: GameId }), Alive = _c.Alive, Kills = _c.Kills;
-        _b.UpdatePartyInfo({ _id: GameId, newData: { Alive: Alive.filter(function (item) { return !Kills.includes(item); }) } });
+        _b.UpdatePartyInfo({
+            _id: GameId,
+            newData: { Alive: Alive.filter(function (item) { return !Kills.includes(item); }) },
+        });
     };
     ClassicScenario.ConcludeTheNight = function (_a) {
         var GameId = _a.GameId;
         return __awaiter(void 0, void 0, void 0, function () {
-            var PartyInfo, NightKills, Detective;
+            var PartyInfo, NightKills, Detective, IsRandom;
             return __generator(_b, function (_c) {
                 switch (_c.label) {
                     case 0:
                         PartyInfo = this.GetPartyInfo({ GameId: GameId });
                         NightKills = [];
                         Detective = 0;
-                        if (PartyInfo.MafiaChoice === "" && PartyInfo.NightCount !== 1)
+                        IsRandom = false;
+                        if (PartyInfo.MafiaChoice === "" && PartyInfo.NightCount !== 1) {
+                            console.log("[Info]: Random Shot");
+                            IsRandom = true;
                             PartyInfo.MafiaChoice = this.GetRandomCitizen({ GameId: GameId });
+                        }
                         if (PartyInfo.MafiaChoice !== "")
-                            NightKills.push(this.ConcludeMafiaShot(__assign({ GameId: GameId }, PartyInfo)));
+                            NightKills.push(this.ConcludeMafiaShot(__assign(__assign({ GameId: GameId }, PartyInfo), { IsRandom: IsRandom })));
                         if (PartyInfo.SniperChoice !== "")
                             NightKills.push(this.ConcludeSniperShot(__assign({ GameId: GameId }, PartyInfo)));
                         if (PartyInfo.DetectiveChoice !== "")
@@ -1767,7 +1883,7 @@ var ClassicScenario = (function (_super) {
                         NightKills = NightKills.filter(function (item) { return item !== ""; });
                         this.PushToKills({
                             GameId: GameId,
-                            Kills: NightKills
+                            Kills: NightKills,
                         });
                         console.log("PartyInfo: ", {
                             MafiaChoice: PartyInfo.MafiaChoice,
@@ -1787,7 +1903,7 @@ var ClassicScenario = (function (_super) {
                                     NightKills: NightKills.toString(),
                                     Detective: Detective,
                                     SituationRequest: PartyInfo.SituationRequestStatus,
-                                }
+                                },
                             })];
                     case 1:
                         _c.sent();
@@ -1803,7 +1919,11 @@ var ClassicScenario = (function (_super) {
         var GameId = _a.GameId, Vote = _a.Vote;
         return __awaiter(void 0, void 0, void 0, function () {
             return __generator(_b, function (_c) {
-                this.IncreaseItemFromPartyInfo({ _id: GameId, Path: "SituationRequestCount", Count: Vote ? 1 : 0 });
+                this.IncreaseItemFromPartyInfo({
+                    _id: GameId,
+                    Path: "SituationRequestCount",
+                    Count: Vote ? 1 : 0,
+                });
                 return [2];
             });
         });
@@ -1814,14 +1934,17 @@ var ClassicScenario = (function (_super) {
             var SituationRequestLength;
             return __generator(_b, function (_c) {
                 this.GameConfigTools.Increase({ GameId: GameId, Path: "SituationRequest" });
-                SituationRequestLength = this.GameConfigTools.Get({ GameId: GameId, Path: "SituationRequest" });
+                SituationRequestLength = this.GameConfigTools.Get({
+                    GameId: GameId,
+                    Path: "SituationRequest",
+                });
                 console.log("StartConcludeSituationRequestCount: ".concat(SituationRequestLength));
                 if (SituationRequestLength === 1) {
                     console.log("StartConcludeSituationRequest");
                     setTimeout(function () { return __awaiter(void 0, void 0, void 0, function () {
                         return __generator(this, function (_a) {
                             switch (_a.label) {
-                                case 0: return [4, this.ConcludeSituationRequest({ GameId: GameId })];
+                                case 0: return [4, ClassicScenario.ConcludeSituationRequest({ GameId: GameId })];
                                 case 1:
                                     _a.sent();
                                     return [2];
@@ -1836,7 +1959,7 @@ var ClassicScenario = (function (_super) {
     ClassicScenario.ConcludeSituationRequest = function (_a) {
         var GameId = _a.GameId, SocketNode = _a.SocketNode;
         return __awaiter(void 0, void 0, void 0, function () {
-            var _c, SituationRequestCount, Alive, SituationRequest, UsersData, Kills_1;
+            var _c, SituationRequestCount, Alive, SituationRequest, UsersData, Kills_1, Mafia, Citizen;
             return __generator(_b, function (_d) {
                 switch (_d.label) {
                     case 0:
@@ -1844,9 +1967,10 @@ var ClassicScenario = (function (_super) {
                         console.log("ConcludeSituationRequest: ", {
                             SituationRequestCount: SituationRequestCount,
                             AliveLength: Alive.length,
-                            SituationRequest: SituationRequest
+                            SituationRequest: SituationRequest,
                         });
-                        if (!(Math.round(SituationRequestCount / 2) >= Alive.length && SituationRequest > 0)) return [3, 2];
+                        if (!(SituationRequestCount >= Math.round(Alive.length / 2) &&
+                            SituationRequest > 0)) return [3, 2];
                         return [4, this.KilledUsers({ GameId: GameId })];
                     case 1:
                         Kills_1 = _d.sent();
@@ -1864,18 +1988,36 @@ var ClassicScenario = (function (_super) {
                         this.IncreaseItemFromPartyInfo({
                             _id: GameId,
                             Path: "SituationRequest",
-                            Count: -1
+                            Count: -1,
+                        });
+                        this.UpdatePartyInfo({
+                            _id: GameId,
+                            newData: {
+                                SituationRequestStatus: false,
+                            },
+                        });
+                        Mafia = UsersData.filter(function (item) { return item === Sides.Mafia; }).length;
+                        Citizen = UsersData.filter(function (item) { return item === Sides.Citizen; }).length;
+                        console.log("[ConcludeSituationRequestResult:", {
+                            Mafia: Mafia,
+                            Citizen: Citizen,
                         });
                         this.SendMessageToParty({
                             GameId: GameId,
                             Event: Triggers.ConcludeSituationRequest,
                             Message: {
-                                Mafia: UsersData.filter(function (item) { return item === Sides.Mafia; }).length,
-                                Citizen: UsersData.filter(function (item) { return item === Sides.Citizen; }).length,
-                            }
+                                Mafia: Mafia,
+                                Citizen: Citizen,
+                            },
                         });
                         _d.label = 2;
                     case 2:
+                        this.UpdatePartyInfo({
+                            _id: GameId,
+                            newData: {
+                                SituationRequestCount: 0,
+                            },
+                        });
                         this.StartDay({ GameId: GameId, SocketNode: SocketNode });
                         return [2];
                 }
@@ -1887,20 +2029,19 @@ var ClassicScenario = (function (_super) {
         var UsersData = _b.GetPartyInfo({ GameId: GameId }).UsersData;
         var SellerChoiceRole = _b.GetUserRoles(SellerChoice, GameId);
         var Side = Sides.Citizen;
-        (MafiaRoles.includes(SellerChoiceRole)) ?
-            Side = Sides.Mafia :
-            Side = Sides.Citizen;
+        MafiaRoles.includes(SellerChoiceRole)
+            ? (Side = Sides.Mafia)
+            : (Side = Sides.Citizen);
         UsersData = UsersData.map(function (user) {
             if (user.UserId === SellerChoice)
-                user.UserRole = Side === Sides.Citizen ?
-                    Roles.Citizen : Roles.Mafia;
+                user.UserRole = Side === Sides.Citizen ? Roles.Citizen : Roles.Mafia;
             return user;
         });
         _b.UpdatePartyInfo({ _id: GameId, newData: { UsersData: UsersData } });
         return true;
     };
     ClassicScenario.ConcludeMafiaShot = function (_a) {
-        var GameId = _a.GameId, MafiaChoice = _a.MafiaChoice, DoctorChoice = _a.DoctorChoice, ImmortalShield = _a.ImmortalShield;
+        var GameId = _a.GameId, MafiaChoice = _a.MafiaChoice, DoctorChoice = _a.DoctorChoice, ImmortalShield = _a.ImmortalShield, IsRandom = _a.IsRandom;
         var Kill = "";
         console.log("[INFO]: Mafia Shot");
         if (MafiaChoice !== DoctorChoice) {
@@ -1916,8 +2057,10 @@ var ClassicScenario = (function (_super) {
             }
         }
         console.log("[INFO]: Mafia Shot Kill: ".concat(Kill));
-        _b.ScoreBoardService.Shot(GameId, Boolean(Kill));
-        _b.ScoreBoardService.Doctor(GameId, MafiaChoice === DoctorChoice);
+        if (!IsRandom)
+            _b.ScoreBoardService.Shot(GameId, Boolean(Kill));
+        if (DoctorChoice !== "")
+            _b.ScoreBoardService.Doctor(GameId, MafiaChoice === DoctorChoice);
         return Kill;
     };
     ClassicScenario.ConcludeSniperShot = function (_a) {
@@ -1937,7 +2080,8 @@ var ClassicScenario = (function (_super) {
                 UserId: SniperInfo[0].UserId,
             });
         }
-        _b.ScoreBoardService.Sniper(GameId, SelectedUserSide === Sides.Citizen, Kill === SniperChoice);
+        if (SniperChoice !== "")
+            _b.ScoreBoardService.Sniper(GameId, SelectedUserSide === Sides.Mafia, Kill === SniperChoice);
         console.log("ConcludeSniperShot: ", {
             SniperChoice: SniperChoice,
             SelectedUserSide: SelectedUserSide,
@@ -1948,7 +2092,7 @@ var ClassicScenario = (function (_super) {
     };
     ClassicScenario.ConcludeDetective = function (_a) {
         var GameId = _a.GameId, DetectiveChoice = _a.DetectiveChoice;
-        var DetectiveChoiceRole = (_b.GetUserRoles(DetectiveChoice, GameId));
+        var DetectiveChoiceRole = _b.GetUserRoles(DetectiveChoice, GameId);
         var Result = [Roles.Mafia].includes(DetectiveChoiceRole);
         _b.ScoreBoardService.Detective(GameId, MafiaRoles.includes(DetectiveChoiceRole), Result);
         return Result;
@@ -1956,22 +2100,19 @@ var ClassicScenario = (function (_super) {
     ClassicScenario.StartNight = function (_a) {
         var GameId = _a.GameId;
         console.log("Start Night");
-        _b.SendMessageToParty({
-            GameId: GameId,
-            Event: "testScoreBoard",
-            Message: _b.GetPartyInfo({ GameId: GameId })
-        });
         var PartyStatus = _b.CheckIsGameGoingOn({ GameId: GameId });
         if (PartyStatus === GameStatus.Continue) {
             _b.SetNightData({ GameId: GameId });
             var IsIntroductionNight = _b.IsIntroductionNight({ GameId: GameId });
-            var _c = _b.GetPartyInfo({ GameId: GameId }), DoctorSaveItself = _c.DoctorSaveItself, Alive = _c.Alive, SniperShotCount = _c.SniperShotCount;
+            var _c = _b.GetPartyInfo({
+                GameId: GameId,
+            }), DoctorSaveItself = _c.DoctorSaveItself, Alive = _c.Alive, SniperShotCount = _c.SniperShotCount;
             var ShotRight = _b.ShotRight({ GameId: GameId });
             console.log("Night: ", {
                 ShotRight: ShotRight.UserId,
                 DoctorSaveItself: DoctorSaveItself,
                 Alive: Alive.toString(),
-                IsIntroductionNight: IsIntroductionNight
+                IsIntroductionNight: IsIntroductionNight,
             });
             _b.SendMessageToParty({
                 GameId: GameId,
@@ -1981,14 +2122,14 @@ var ClassicScenario = (function (_super) {
                     DoctorSaveItself: DoctorSaveItself,
                     Alive: Alive.toString(),
                     SniperShotCount: SniperShotCount,
-                    IsIntro: IsIntroductionNight
-                }
+                    IsIntro: IsIntroductionNight,
+                },
             });
             _b.UpdatePartyInfo({
                 _id: GameId,
                 newData: {
                     MafiaShotRight: ShotRight.UserId,
-                }
+                },
             });
         }
     };
@@ -2006,7 +2147,9 @@ var ClassicScenario = (function (_super) {
         var GameId = _a.GameId;
         try {
             var DisconnectedUsers = ClassicScenario.DisconnectedUsers({ GameId: GameId });
-            var _c = ClassicScenario.GetPartyInfo({ GameId: GameId }), Alive = _c.Alive, ShotRightQueue = _c.ShotRightQueue;
+            var _c = ClassicScenario.GetPartyInfo({
+                GameId: GameId,
+            }), Alive = _c.Alive, ShotRightQueue = _c.ShotRightQueue;
             var shotRightQueue = [];
             if (ShotRightQueue.length === 0 || !Array.isArray(ShotRightQueue)) {
                 var _loop_2 = function (Role) {
@@ -2026,8 +2169,8 @@ var ClassicScenario = (function (_super) {
                 _b.UpdatePartyInfo({
                     _id: GameId,
                     newData: {
-                        ShotRightQueue: shotRightQueue
-                    }
+                        ShotRightQueue: shotRightQueue,
+                    },
                 });
                 console.log("ShotRight: ", { shotRightQueue: shotRightQueue });
             }
@@ -2045,10 +2188,11 @@ var ClassicScenario = (function (_super) {
                     console.log("[Shot Right] ".concat(User.UserId, " => IsConnected: ").concat(IsConnected, " IsAlive: ").concat(IsAlive));
                 }
             }
+            return { UserId: "", UserRole: 0 };
         }
         catch (e) {
             console.trace(e);
-            return "";
+            return { UserId: "", UserRole: 0 };
         }
     };
     ClassicScenario.LastChanceCard = function (_a) {
@@ -2058,24 +2202,27 @@ var ClassicScenario = (function (_super) {
             return __generator(_b, function (_f) {
                 switch (_f.label) {
                     case 0:
-                        _e = this.GetPartyInfo({ GameId: GameId }), LastChanceCardCode = _e.LastChanceCardCode, RightToChooseCard = _e.RightToChooseCard;
+                        _e = this.GetPartyInfo({
+                            GameId: GameId,
+                        }), LastChanceCardCode = _e.LastChanceCardCode, RightToChooseCard = _e.RightToChooseCard;
                         IsCorrect = true;
                         hasAccess = this.ioTools.GetQuery(SocketNode).userId === RightToChooseCard;
-                        isTargetNotEmpty = (TargetId !== "" || LastChanceCardCode === LastChance.Insomnia);
-                        CanUse = hasAccess &&
-                            isTargetNotEmpty;
-                        TargetId ? console.log("[INFO]LastChanceCard: ", {
-                            hasAccess: hasAccess,
-                            isTargetNotEmpty: isTargetNotEmpty,
-                            isFinalShot: LastChanceCardCode === LastChance.FinalShot
-                        }) : void 0;
+                        isTargetNotEmpty = TargetId !== "" || LastChanceCardCode === LastChance.Insomnia;
+                        CanUse = hasAccess && isTargetNotEmpty;
+                        TargetId
+                            ? console.log("[INFO]LastChanceCard: ", {
+                                hasAccess: hasAccess,
+                                isTargetNotEmpty: isTargetNotEmpty,
+                                isFinalShot: LastChanceCardCode === LastChance.FinalShot,
+                            })
+                            : void 0;
                         if (!CanUse) return [3, 12];
                         if (!(LastChanceCardCode === LastChance.RedCarpet)) return [3, 1];
                         this.UpdatePartyInfo({
                             _id: GameId,
                             newData: {
-                                RedCarpet: TargetId
-                            }
+                                RedCarpet: TargetId,
+                            },
                         });
                         return [3, 10];
                     case 1:
@@ -2085,7 +2232,7 @@ var ClassicScenario = (function (_super) {
                             newData: {
                                 MafiaChoice: TargetId,
                                 MafiaShotIsDisable: true,
-                            }
+                            },
                         });
                         return [4, this.StartNight({ GameId: GameId })];
                     case 2:
@@ -2096,12 +2243,13 @@ var ClassicScenario = (function (_super) {
                         this.UpdatePartyInfo({
                             _id: GameId,
                             newData: {
-                                GreenPath: TargetId
-                            }
+                                GreenPath: TargetId,
+                            },
                         });
                         return [3, 10];
                     case 4:
-                        if (!(LastChanceCardCode === LastChance.BeautifulMind && UserRole !== -1)) return [3, 8];
+                        if (!(LastChanceCardCode === LastChance.BeautifulMind &&
+                            UserRole !== -1)) return [3, 8];
                         return [4, this.GetUserRoles(TargetId, GameId)];
                     case 5:
                         SelectedUserRole = _f.sent();
@@ -2123,7 +2271,7 @@ var ClassicScenario = (function (_super) {
                             IsCorrect: IsCorrect,
                             LastChanceCardCode: LastChanceCardCode,
                             TargetId: TargetId,
-                            UserRole: UserRole
+                            UserRole: UserRole,
                         });
                         if (![LastChance.GreenPath, LastChance.RedCarpet].includes(LastChanceCardCode)) return [3, 12];
                         return [4, this.SendMessageToParty({
@@ -2134,7 +2282,7 @@ var ClassicScenario = (function (_super) {
                                     LastChanceCardCode: LastChanceCardCode,
                                     TargetId: TargetId,
                                     UserRole: UserRole,
-                                }
+                                },
                             })];
                     case 11:
                         _f.sent();
@@ -2147,7 +2295,10 @@ var ClassicScenario = (function (_super) {
     ClassicScenario.LastChanceEnd = function (_a) {
         var GameId = _a.GameId, SocketNode = _a.SocketNode;
         _b.GameConfigTools.Increase({ GameId: GameId, Path: "LastChanceCard", Count: 1 });
-        var LastChanceCard = _b.GameConfigTools.Get({ GameId: GameId, Path: "LastChanceCard" });
+        var LastChanceCard = _b.GameConfigTools.Get({
+            GameId: GameId,
+            Path: "LastChanceCard",
+        });
         if (LastChanceCard === 1) {
             console.log("LastChanceEnd: ".concat(LastChanceCard));
             var LastChanceCardCode = _b.GetPartyInfo({ GameId: GameId }).LastChanceCardCode;
@@ -2174,13 +2325,17 @@ var ClassicScenario = (function (_super) {
     };
     ClassicScenario.ScoreBoardService = {
         CorrectVote: function (GameId, UserId) {
+            console.log("[ScoreBoardService]: CorrectVote For User ".concat(UserId));
             var UserRole = ClassicScenario.GetUserRoles(UserId, GameId);
             var key = RolesName[UserRole];
             var ShotRightQueue = ClassicScenario.GetPartyInfo({ GameId: GameId }).ShotRightQueue;
             if ([Roles.Mafia].includes(UserRole)) {
-                key = RolesName[UserRole] + ShotRightQueue.findIndex(function (user) { return user.UserId === UserId; });
+                key =
+                    RolesName[UserRole] +
+                        ShotRightQueue.findIndex(function (user) { return user.UserId === UserId; });
             }
-            ClassicScenario.PartiesInfo[GameId]["Scores"][UserId].Score += Scores[key].CorrectVote;
+            ClassicScenario.PartiesInfo[GameId]["Scores"][UserId].Score +=
+                Scores[key].CorrectVote;
             ClassicScenario.PartiesInfo[GameId]["Scores"][UserId].CorrectVote += 1;
         },
         IncorrectVote: function (GameId, UserId) {
@@ -2188,10 +2343,13 @@ var ClassicScenario = (function (_super) {
             var key = RolesName[UserRole];
             var ShotRightQueue = ClassicScenario.GetPartyInfo({ GameId: GameId }).ShotRightQueue;
             if ([Roles.Mafia].includes(UserRole)) {
-                key = RolesName[UserRole] + ShotRightQueue.findIndex(function (user) { return user.UserId === UserId; });
+                key =
+                    RolesName[UserRole] +
+                        ShotRightQueue.findIndex(function (user) { return user.UserId === UserId; });
             }
             try {
-                ClassicScenario.PartiesInfo[GameId]["Scores"][UserId].Score += Scores[key].IncorrectVote;
+                ClassicScenario.PartiesInfo[GameId]["Scores"][UserId].Score +=
+                    Scores[key].IncorrectVote;
             }
             catch (e) {
                 console.trace(e);
@@ -2200,54 +2358,91 @@ var ClassicScenario = (function (_super) {
         },
         SetRoleAndSide: function (GameId, UserId, Role) {
             ClassicScenario.PartiesInfo[GameId]["Scores"][UserId].Role = Role;
-            ClassicScenario.PartiesInfo[GameId]["Scores"][UserId].Side = MafiaRoles.includes(Role) ? Sides.Mafia : Sides.Citizen;
+            ClassicScenario.PartiesInfo[GameId]["Scores"][UserId].Side =
+                MafiaRoles.includes(Role) ? Sides.Mafia : Sides.Citizen;
         },
         Shot: function (GameId, isSuccess) {
             var _a = ClassicScenario.GetPartyInfo({ GameId: GameId }), UsersData = _a.UsersData, MafiaShotRight = _a.MafiaShotRight, ShotRightQueue = _a.ShotRightQueue;
             var MafiaSniperRole = ClassicScenario.GetUserRoles(MafiaShotRight, GameId);
-            var MafiaGroup = UsersData.filter(function (user) { return MafiaRoles.includes(user.UserRole); });
-            console.log("Score Board Shot Right: ".concat(MafiaShotRight));
+            var MafiaGroup = UsersData.filter(function (user) {
+                return MafiaRoles.includes(user.UserRole);
+            });
             if (!MafiaShotRight) {
                 console.log("[INFO]: Mafia Shot is Disabled");
                 return;
             }
+            var index = ShotRightQueue.findIndex(function (user) { return user.UserId === MafiaShotRight; });
+            var MafiaSniperScores = MafiaSniperRole !== Roles.Mafia
+                ? Scores[RolesName[MafiaSniperRole]]
+                : Scores["".concat(RolesName[MafiaSniperRole]).concat(index)];
             if (isSuccess) {
-                var index = ShotRightQueue.indexOf(MafiaShotRight);
-                var MafiaSniperScores = MafiaSniperRole !== Roles.Mafia ? Scores[RolesName[MafiaSniperRole]] : Scores["".concat(RolesName[MafiaSniperRole]).concat(index)];
                 for (var _i = 0, MafiaGroup_1 = MafiaGroup; _i < MafiaGroup_1.length; _i++) {
                     var mafia = MafiaGroup_1[_i];
-                    ClassicScenario.PartiesInfo[GameId]["Scores"][mafia.UserId].Score += Scores.MafiaShot.MafiaShot;
+                    console.log("[ScoreBoardService]: Success Shot (MafiaGroupShot) For User ".concat(mafia.UserId));
+                    ClassicScenario.PartiesInfo[GameId]["Scores"][mafia.UserId].Score +=
+                        Scores.MafiaShot.MafiaShot;
                 }
-                ClassicScenario.PartiesInfo[GameId]["Scores"][MafiaShotRight].Score += MafiaSniperScores.MafiaShot;
+                console.log("[ScoreBoardService]: Success Shot (MafiaShot) For User ".concat(MafiaShotRight));
+                ClassicScenario.PartiesInfo[GameId]["Scores"][MafiaShotRight].Score +=
+                    MafiaSniperScores.MafiaShot;
             }
-            ClassicScenario.PartiesInfo[GameId]["Scores"][MafiaShotRight].Score += MafiaSniperScores.ShotRight;
+            console.log("[ScoreBoardService]: Success Shot (ShotRight) For User ".concat(MafiaShotRight));
+            ClassicScenario.PartiesInfo[GameId]["Scores"][MafiaShotRight].Score +=
+                MafiaSniperScores.ShotRight;
         },
         Doctor: function (GameId, isSuccess) {
-            var Doctor = ClassicScenario.GetUserByRole({ GameId: GameId, Role: Roles.Doctor })[0];
-            var score = isSuccess ? Scores.Doctor.UseAbility + Scores.Doctor.CorrectAbility : Scores.Doctor.UseAbility;
-            ClassicScenario.PartiesInfo[GameId]["Scores"][Doctor.UserId].Score += score;
+            var Doctor = ClassicScenario.GetUserByRole({
+                GameId: GameId,
+                Role: Roles.Doctor,
+            })[0];
+            var score = isSuccess
+                ? Scores.Doctor.UseAbility + Scores.Doctor.CorrectAbility
+                : Scores.Doctor.UseAbility;
+            isSuccess &&
+                console.log("[ScoreBoardService]: Success Save For User ".concat(Doctor.UserId));
+            ClassicScenario.PartiesInfo[GameId]["Scores"][Doctor.UserId].Score +=
+                score;
+            console.log("[ScoreBoardService]: UseAbility Doctor Shot For User ".concat(Doctor.UserId));
             if (isSuccess)
                 ClassicScenario.PartiesInfo[GameId]["Scores"][Doctor.UserId].UseAbility += 1;
         },
         Sniper: function (GameId, isSuccess, isMafiaKilled) {
-            var Sniper = ClassicScenario.GetUserByRole({ GameId: GameId, Role: Roles.Sniper })[0];
+            var Sniper = ClassicScenario.GetUserByRole({
+                GameId: GameId,
+                Role: Roles.Sniper,
+            })[0];
             var score = Scores.Sniper.UseAbility;
             if (isSuccess) {
                 score += Scores.Sniper.CorrectAbility;
+                console.log("[ScoreBoardService]: Success Sniper Shot For User ".concat(Sniper.UserId));
                 ClassicScenario.PartiesInfo[GameId]["Scores"][Sniper.UserId].UseAbility += 1;
             }
             if (isMafiaKilled)
                 score += Scores.Sniper.KillMafia;
-            ClassicScenario.PartiesInfo[GameId]["Scores"][Sniper.UserId].Score += score;
+            if (isMafiaKilled) {
+                console.log("[ScoreBoardService]: isMafiaKilled Sniper Shot For User ".concat(Sniper.UserId));
+            }
+            console.log("[ScoreBoardService]: UseAbility Sniper Shot For User ".concat(Sniper.UserId));
+            ClassicScenario.PartiesInfo[GameId]["Scores"][Sniper.UserId].Score +=
+                score;
         },
         Detective: function (GameId, CorrectInquiry, PositiveInquiry) {
-            var Detective = ClassicScenario.GetUserByRole({ GameId: GameId, Role: Roles.Detective })[0];
+            var Detective = ClassicScenario.GetUserByRole({
+                GameId: GameId,
+                Role: Roles.Detective,
+            })[0];
             var score = Scores.Detective.UseAbility;
             if (CorrectInquiry)
                 score += Scores.Detective.CorrectInquiry;
             if (PositiveInquiry)
                 score += Scores.Detective.PositiveInquiry;
-            ClassicScenario.PartiesInfo[GameId]["Scores"][Detective.UserId].Score += score;
+            if (CorrectInquiry)
+                console.log("[ScoreBoardService]: CorrectInquiry For User ".concat(Detective.UserId));
+            if (PositiveInquiry)
+                console.log("[ScoreBoardService]: PositiveInquiry For User ".concat(Detective.UserId));
+            console.log("[ScoreBoardService]: UseAbility Detective ".concat(Detective.UserId));
+            ClassicScenario.PartiesInfo[GameId]["Scores"][Detective.UserId].Score +=
+                score;
             if (CorrectInquiry)
                 ClassicScenario.PartiesInfo[GameId]["Scores"][Detective.UserId].UseAbility += 1;
         },
@@ -2302,7 +2497,6 @@ var ClassicScenario = (function (_super) {
                 user.Score = !Quit.includes(user.UserId) ? Classic(Win, user.Score) : 0;
                 return user;
             });
-            fs.writeFileSync("SCOREBOARD.json", JSON.stringify(ScoreBoard));
             ClassicScenario.PartiesInfo[GameId]["ScoreBoard"] = ScoreBoard;
         },
     };
@@ -2323,19 +2517,23 @@ var ClassicScenario = (function (_super) {
                 switch (_e.label) {
                     case 0:
                         _e.trys.push([0, 11, , 12]);
-                        return [4, UserManager
-                                .GetUserById(SocketNode.handshake.query.userId)];
+                        return [4, UserManager.GetUserById(SocketNode.handshake.query.userId)];
                     case 1:
                         UserData = (_e.sent()).Payload;
-                        if (!(UserData.GameId && this.PartiesInfo[UserData.GameId.toString()] !== undefined)) return [3, 10];
-                        Alive = this.GetPartyInfo({ GameId: UserData.GameId.toString() }).Alive;
+                        if (!(UserData.GameId &&
+                            this.PartiesInfo[UserData.GameId.toString()] !== undefined)) return [3, 10];
+                        Alive = this.GetPartyInfo({
+                            GameId: UserData.GameId.toString(),
+                        }).Alive;
                         if (!Alive.includes(SocketNode.handshake.query.userId)) return [3, 9];
                         this.PushItemToPartyInfo({
                             _id: UserData.GameId.toString(),
                             Item: UserData._id.toString(),
                             Path: "DisconnectedUsers",
                         });
-                        _c = this.GetPartyInfo({ GameId: UserData.GameId }), CurrentTurnUser = _c.CurrentTurnUser, GameState = _c.GameState;
+                        _c = this.GetPartyInfo({
+                            GameId: UserData.GameId,
+                        }), CurrentTurnUser = _c.CurrentTurnUser, GameState = _c.GameState;
                         console.log("[INFO]: Disconnect: ", {
                             CurrentTurnUser: CurrentTurnUser,
                             _id: SocketNode.handshake.query.userId,
@@ -2346,12 +2544,15 @@ var ClassicScenario = (function (_super) {
                         this.PassTurn({
                             GameId: UserData.GameId.toString(),
                             SocketNode: SocketNode,
-                            IsStarted: false
+                            IsStarted: false,
                         });
                         return [3, 4];
                     case 2:
                         if (!(GameState === GameStates.CourtSpeak)) return [3, 4];
-                        return [4, this.PassCourtSpeak({ SocketNode: SocketNode, GameId: UserData.GameId.toString() })];
+                        return [4, this.PassCourtSpeak({
+                                SocketNode: SocketNode,
+                                GameId: UserData.GameId.toString(),
+                            })];
                     case 3:
                         _e.sent();
                         _e.label = 4;
@@ -2361,7 +2562,10 @@ var ClassicScenario = (function (_super) {
                         if (!(RightToChooseCard === UserData._id.toString())) return [3, 8];
                         if (!(LastChanceCardCode === LastChance.Insomnia)) return [3, 6];
                         console.log("StartDay From Insomnia (Disconnect)");
-                        return [4, this.StartDay({ GameId: UserData.GameId.toString(), SocketNode: SocketNode })];
+                        return [4, this.StartDay({
+                                GameId: UserData.GameId.toString(),
+                                SocketNode: SocketNode,
+                            })];
                     case 5:
                         _e.sent();
                         return [3, 8];
@@ -2377,8 +2581,8 @@ var ClassicScenario = (function (_super) {
                             GameId: UserData.GameId.toString(),
                             Message: {
                                 UserId: SocketNode.handshake.query.userId,
-                                Opinion: Opinions.Disconnect
-                            }
+                                Opinion: Opinions.Disconnect,
+                            },
                         });
                         _e.label = 9;
                     case 9: return [2, true];
@@ -2398,29 +2602,32 @@ var ClassicScenario = (function (_super) {
             var UserData, GameId, _c, DisconnectedUsers, Alive, Scenario;
             return __generator(_b, function (_d) {
                 switch (_d.label) {
-                    case 0: return [4, UserManager
-                            .GetUserById(SocketNode.handshake.query.userId)];
+                    case 0:
+                        console.log("Connect Game");
+                        SocketNode.emit("game_test", "connected to game server");
+                        return [4, UserManager.GetUserById(SocketNode.handshake.query.userId)];
                     case 1:
                         UserData = (_d.sent()).Payload;
                         GameId = UserData.GameId.toString();
                         if (UserData.GameId && this.PartiesInfo[GameId] !== undefined) {
-                            _c = this.GetPartyInfo({ GameId: GameId }), DisconnectedUsers = _c.DisconnectedUsers, Alive = _c.Alive, Scenario = _c.Scenario;
+                            _c = this.GetPartyInfo({
+                                GameId: GameId,
+                            }), DisconnectedUsers = _c.DisconnectedUsers, Alive = _c.Alive, Scenario = _c.Scenario;
                             if (Alive.includes(SocketNode.handshake.query.userId)) {
-                                SocketNode.join(this.RoomsTools.party(GameId));
                                 DisconnectedUsers = DisconnectedUsers.filter(function (item) {
                                     return item !== SocketNode.handshake.query.userId;
                                 });
                                 this.UpdatePartyInfo({
                                     _id: GameId,
-                                    newData: { DisconnectedUsers: __spreadArray([], new Set(DisconnectedUsers), true) }
+                                    newData: { DisconnectedUsers: __spreadArray([], new Set(DisconnectedUsers), true) },
                                 });
                                 this.SendMessageToParty({
                                     Triggers: Triggers.Opinion,
                                     GameId: GameId,
                                     Message: {
                                         UserId: SocketNode.handshake.query.userId,
-                                        Opinion: Opinions.Connect
-                                    }
+                                        Opinion: Opinions.Connect,
+                                    },
                                 });
                                 this.SendMessageToUser({
                                     Triggers: "Rejoin",
@@ -2428,8 +2635,8 @@ var ClassicScenario = (function (_super) {
                                     GameId: GameId,
                                     Message: {
                                         Scenario: Scenario,
-                                        GameId: GameId
-                                    }
+                                        GameId: GameId,
+                                    },
                                 });
                             }
                         }
@@ -2437,6 +2644,10 @@ var ClassicScenario = (function (_super) {
                 }
             });
         });
+    };
+    ClassicScenario.BypassGame = function (_a) {
+        var GameId = _a.GameId, Win = _a.Win;
+        _b.GameEndProcess({ GameId: GameId, Win: Win });
     };
     ClassicScenario.SecondVoteMaxVote = function (Victims) {
         return Math.max.apply(Math, __spreadArray([], Object.values(Victims), true).map(function (vote) {

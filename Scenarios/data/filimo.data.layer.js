@@ -71,7 +71,7 @@ var socket_abs_1 = __importDefault(require("../../Core/interface/socket.abs"));
 var IInitParty = {
     _id: String(),
     Members: Array(),
-    GameMode: Number()
+    GameMode: Number(),
 };
 var IPassCourtSpeak = {
     GameId: String(),
@@ -85,10 +85,10 @@ var IUserOpinion = {
     GameId: String(),
 };
 var ILastChanceCard = {
-    GameId: String()
+    GameId: String(),
 };
 var IChallengeRequest = {
-    GameId: String()
+    GameId: String(),
 };
 var IAcceptChallenge = {
     GameId: String(),
@@ -168,6 +168,22 @@ var Filimo = (function (_super) {
                 }
             });
         });
+    };
+    Filimo.ExecutionAnimation = function (input, SocketNode) {
+        try {
+            var data = __assign(__assign({}, input), { SocketNode: SocketNode });
+            if ((0, interface_1.CheckValidation)(IEnvSetting, data)) {
+                console.log("ExecutionAnimation: ".concat(JSON.stringify(input)));
+                return filimo_scenario_1.default.ExecutionAnimation(data);
+            }
+            else {
+                console.trace("Schema Error");
+                return false;
+            }
+        }
+        catch (e) {
+            console.trace(e);
+        }
     };
     Filimo.EnvSetting = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
@@ -572,10 +588,8 @@ var Filimo = (function (_super) {
             });
         });
     };
-    Filimo.Count = function () {
-    };
-    Filimo.VoteList = function () {
-    };
+    Filimo.Count = function () { };
+    Filimo.VoteList = function () { };
     Filimo.ConcludeTheNight = function (input, SocketNode) {
         return __awaiter(this, void 0, void 0, function () {
             var data, e_18;
