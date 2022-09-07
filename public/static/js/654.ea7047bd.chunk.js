@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkawesome_panel=self.webpackChunkawesome_panel||[]).push([[654],{57654:function(e,n,s){s.r(n),s.d(n,{ProfileView:function(){return a}});s(72791);var r=s(80184);function a(e){var n=e.user;return(0,r.jsx)("div",{className:"row",children:(0,r.jsxs)("div",{className:"col-12",children:["Under developement ",n.UserName]})})}n.default=a}}]);
+//# sourceMappingURL=654.ea7047bd.chunk.js.map
